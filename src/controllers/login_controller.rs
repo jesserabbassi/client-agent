@@ -13,7 +13,7 @@ pub(crate) fn bind(ui: &ClientView, on_authenticated: fn(&ClientView, String)) {
     let weak = ui.as_weak();
     ui.on_login_requested(move |username, password, remember_me| {
         let Some(ui) = weak.upgrade() else { return };
-        if ui.get_busy() || ui.get_authenticated() {
+        if ui.get_busy() || ui.get_authenticated() || ui.get_otp_pending() {
             return;
         }
         let request = LoginRequest {
@@ -39,8 +39,11 @@ pub(crate) fn bind(ui: &ClientView, on_authenticated: fn(&ClientView, String)) {
                         let _token = response.access_token;
                         present(
                             &ui,
-                            AuthState::Authenticated,
-                            &format!("Welcome, {}. Authentication successful.", response.username),
+                            AuthState::OtpRequired,
+                            &format!(
+                                "Welcome, {}. Enter your verification code.",
+                                response.username
+                            ),
                         );
                         on_authenticated(&ui, response.username);
                     }

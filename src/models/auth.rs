@@ -13,7 +13,7 @@ pub(crate) struct LoginResponse {
 pub(crate) enum AuthState {
     Idle,
     Loading,
-    Authenticated,
+    OtpRequired,
     InvalidCredentials,
     ServerUnavailable,
     NetworkError,

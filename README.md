@@ -9,7 +9,7 @@ source "$HOME/.cargo/env" # If Rust is not already on PATH
 cargo run
 ```
 
-Development credentials: **player / password**. The default `mock-auth` feature is development-only, including release builds. `cargo run --no-default-features` fails authentication closed.
+Development credentials: **player / password**, followed by demo verification code **123456**. The default `mock-auth` feature is development-only, including release builds. `cargo run --no-default-features` fails authentication closed.
 
 ## Pages
 
@@ -71,3 +71,12 @@ NINETY_MOCK_MODE=network-error cargo test
 ```
 
 No real backend, game launcher, or payment integration is included. Windows runtime validation remains pending.
+
+
+## OTP verification
+
+Successful password validation opens a dedicated OTP screen before dashboard access. Enter the demo code **123456**, then choose **Verify & continue** (or press Enter). Incorrect codes display an error; five failed attempts require returning to login. Back to login and logout clear the pending verification state. Dashboard, Games, and Wallet navigation remains blocked until verification succeeds.
+
+This is a development-only simulation, not production MFA: the code is fixed, no email/SMS is sent, and no server challenge or code expiry is implemented. Mock-disabled builds reject verification. Production integration must issue and verify expiring, single-use challenges and enforce attempt limits on the server.
+
+The screen is in `src/ui/otp/`, callbacks in `src/controllers/otp_controller.rs`, and code validation in `src/services/otp_service.rs`.

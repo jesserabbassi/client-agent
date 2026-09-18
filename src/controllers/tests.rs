@@ -82,6 +82,33 @@ fn login_callback_validates_and_delivers_worker_results() {
     events
         .recv_timeout(Duration::from_secs(5))
         .expect("worker result")();
+    assert!(!ui.get_authenticated());
+    assert!(ui.get_otp_pending());
+    ui.invoke_navigate(crate::ui::Page::Games);
+    assert_eq!(ui.get_page(), crate::ui::Page::Dashboard);
+    for (width, height) in [(1120, 830), (1920, 1080), (2560, 1440)] {
+        window.set_size(slint::PhysicalSize::new(width, height));
+        window.request_redraw();
+        let mut pixels = slint::SharedPixelBuffer::<slint::Rgb8Pixel>::new(width, height);
+        assert!(window.draw_if_needed(|renderer| {
+            renderer.render(pixels.make_mut_slice(), width as usize);
+        }));
+        if let Some(directory) = std::env::var_os("NINETY_TEST_CAPTURE_DIR") {
+            use std::io::Write;
+            let path = std::path::PathBuf::from(directory).join(format!("otp-{width}.ppm"));
+            let mut file = std::fs::File::create(path).expect("OTP capture");
+            write!(file, "P6\n{width} {height}\n255\n").unwrap();
+            file.write_all(pixels.as_bytes()).unwrap();
+        }
+    }
+    ui.set_otp_code("000000".into());
+    ui.invoke_otp_verify();
+    assert!(!ui.get_authenticated());
+    assert!(!ui.get_otp_error().is_empty());
+    ui.set_otp_code("123456".into());
+    ui.invoke_otp_verify();
+    assert!(!ui.get_otp_pending());
+    assert!(ui.get_otp_code().is_empty());
     assert!(ui.get_authenticated());
     assert!(!ui.get_busy());
     assert!(events.try_recv().is_err());
@@ -137,5 +164,20 @@ fn login_callback_validates_and_delivers_worker_results() {
     events
         .recv_timeout(Duration::from_secs(5))
         .expect("login after logout")();
-    assert!(ui.get_authenticated());
+    assert!(!ui.get_authenticated());
+    assert!(ui.get_otp_pending());
+    for _ in 0..5 {
+        ui.set_otp_code("000000".into());
+        ui.invoke_otp_verify();
+    }
+    ui.set_otp_code("123456".into());
+    ui.invoke_otp_verify();
+    assert!(!ui.get_authenticated());
+    assert_eq!(ui.get_otp_attempts(), 5);
+    ui.invoke_otp_cancel();
+    assert!(!ui.get_otp_pending());
+    assert!(ui.get_otp_code().is_empty());
+    assert!(ui.get_player_name().is_empty());
+    ui.invoke_otp_verify();
+    assert!(!ui.get_authenticated());
 }

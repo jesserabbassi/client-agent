@@ -1,0 +1,28 @@
+import { Button, LineEdit } from "std-widgets.slint";
+export component OtpScreen inherits Rectangle {
+    in-out property <string> code;
+    in property <string> error;
+    in property <bool> locked;
+    in property <bool> demo;
+    callback verify();
+    callback cancel();
+    background: @linear-gradient(120deg, #06121f, #0d2035, #060d17);
+    VerticalLayout { alignment: center; spacing: 22px;
+        Text { text: "NINETY"; color: white; font-size: 34px; font-weight: 900; horizontal-alignment: center; height: 45px; }
+        Text { text: "G A M I N G   H O U S E"; color: #91acbf; font-size: 11px; horizontal-alignment: center; height: 20px; }
+        HorizontalLayout { alignment: center;
+            Rectangle { width: 490px; height: 550px; background: #091b2d; border-width: 1px; border-color: #29415b; border-radius: 12px;
+                VerticalLayout { padding: 36px; spacing: 18px;
+                    Text { text: "STEP 2 OF 2"; color: #ff7921; font-size: 12px; height: 20px; }
+                    Text { text: "Verify your login"; color: white; font-size: 30px; font-weight: 700; height: 42px; }
+                    Text { text: "Enter your six-digit verification code\nto continue to your gaming dashboard."; color: #a5bac9; font-size: 15px; height: 50px; }
+                    Text { text: root.demo ? "DEMO CODE: 123456 · No SMS or email is sent." : "Verification server unavailable."; color: #54cced; font-size: 12px; wrap: word-wrap; height: 35px; }
+                    editor := LineEdit { text <=> root.code; placeholder-text: "6-digit code"; enabled: !root.locked; font-size: 24px; height: 55px; accepted => { root.verify(); } }
+                    Text { text: root.error; color: #ff9b80; wrap: word-wrap; height: 45px; font-size: 13px; }
+                    Button { text: "Verify & continue →"; primary: true; enabled: !root.locked; height: 48px; clicked => { root.verify(); } }
+                    Button { text: "← Back to login"; height: 40px; clicked => { root.cancel(); } }
+                }
+            }
+        }
+    }
+}

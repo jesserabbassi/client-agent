@@ -2,7 +2,8 @@ use crate::ui::{ClientView, Page};
 use slint::ComponentHandle;
 
 pub(crate) fn bind(ui: &ClientView) {
-    super::login_controller::bind(ui, show_dashboard);
+    super::otp_controller::bind(ui);
+    super::login_controller::bind(ui, super::otp_controller::begin);
     let weak = ui.as_weak();
     ui.on_navigate(move |page| {
         if let Some(ui) = weak.upgrade() {
@@ -14,6 +15,7 @@ pub(crate) fn bind(ui: &ClientView) {
     let weak = ui.as_weak();
     ui.on_logout_requested(move || {
         if let Some(ui) = weak.upgrade() {
+            super::otp_controller::reset(&ui);
             ui.set_authenticated(false);
             ui.set_page(Page::Dashboard);
             ui.set_player_name("".into());
@@ -21,9 +23,4 @@ pub(crate) fn bind(ui: &ClientView) {
             ui.set_message("".into());
         }
     });
-}
-fn show_dashboard(ui: &ClientView, username: String) {
-    ui.set_page(Page::Dashboard);
-    ui.set_player_name(username.into());
-    ui.set_authenticated(true);
 }

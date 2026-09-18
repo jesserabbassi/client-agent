@@ -1,3 +1,4 @@
+import { OtpScreen } from "otp/otp.slint";
 import { LoginScreen } from "login/screen.slint";
 import { AppShell, Page } from "shell.slint";
 import { Palette } from "std-widgets.slint";
@@ -21,10 +22,16 @@ export component ClientView inherits Window {
     in-out property <string> password;
     in property <string> player-name;
     in property <Page> page: Page.dashboard;
+    in property <bool> otp-pending: false;
+    in-out property <string> otp-code;
+    in property <string> otp-error;
+    in property <int> otp-attempts: 0;
+    callback otp-verify();
+    callback otp-cancel();
     callback navigate(Page);
     callback logout-requested();
     callback login-requested(string, string, bool);
-    if !root.authenticated: LoginScreen {
+    if !root.authenticated && !root.otp-pending: LoginScreen {
         busy: root.busy;
         authenticated: root.authenticated;
         development-mode: root.development-mode;
@@ -33,6 +40,14 @@ export component ClientView inherits Window {
         message: root.message;
         password <=> root.password;
         login-requested(u, p, r) => { root.login-requested(u, p, r); }
+    }
+    if !root.authenticated && root.otp-pending: OtpScreen {
+        code <=> root.otp-code;
+        error: root.otp-error;
+        locked: root.otp-attempts >= 5;
+        demo: root.development-mode;
+        verify => { root.otp-verify(); }
+        cancel => { root.otp-cancel(); }
     }
     if root.authenticated: AppShell {
         player-name: root.player-name;
