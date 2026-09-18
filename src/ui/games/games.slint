@@ -1,0 +1,37 @@
+import { Button } from "std-widgets.slint";
+export component Games inherits Rectangle {
+    private property <string> category: "All Games";
+    background: #00121d;
+    min-height: 720px;
+    VerticalLayout { padding: 26px; spacing: 20px;
+        Text { text: "Games Library"; color: white; font-size: 30px; font-weight: 700; height: 42px; }
+        Text { text: "Explore the collection and find your next adventure.  ·  Demo catalog"; color: #9fb8c9; height: 25px; }
+        HorizontalLayout { spacing: 10px; height: 44px;
+            for label in ["All Games", "FPS", "MOBA", "Sports", "Racing"]: Button {
+                text: label; primary: root.category == label; clicked => { root.category = label; }
+            }
+        }
+        VerticalLayout { spacing: 12px;
+            for row in [
+                [{ name: "Counter-Strike 2", genre: "FPS", mark: "CS2", accent: #be661b }, { name: "Valorant", genre: "FPS", mark: "V", accent: #9b284e }, { name: "League of Legends", genre: "MOBA", mark: "LoL", accent: #276d81 }],
+                [{ name: "Dota 2", genre: "MOBA", mark: "D2", accent: #962d26 }, { name: "EA FC 24", genre: "Sports", mark: "FC", accent: #416851 }, { name: "Rocket League", genre: "Racing", mark: "RL", accent: #245dba }]
+            ]: HorizontalLayout { spacing: 12px; height: 200px;
+                for game in row: Rectangle {
+                    opacity: root.category == "All Games" || root.category == game.genre ? 1 : 0.2;
+                    background: @linear-gradient(125deg, game.accent, #061725); border-width: 1px; border-color: #154257; border-radius: 7px;
+                    VerticalLayout { padding: 20px; spacing: 12px;
+                        Text { text: game.mark; color: #ffffff; font-size: 48px; font-weight: 900; }
+                        Text { text: game.name; color: white; font-size: 17px; font-weight: 600; wrap: word-wrap; }
+                        Text { text: game.genre; color: #aee6ff; font-size: 12px; }
+                    }
+                }
+            }
+        }
+        Rectangle { height: 100px; background: @linear-gradient(110deg, #301342, #071c2c); border-radius: 7px;
+            VerticalLayout { padding: 20px; spacing: 10px;
+                Text { text: "Discover New Worlds"; color: white; font-size: 23px; }
+                Text { text: "Catalog preview. Game launching will be connected later."; color: #a5bac9; }
+            }
+        }
+    }
+}

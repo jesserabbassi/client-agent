@@ -1,1 +1,1 @@
-pub(crate) mod station_repository;
+//! Data repositories will be added when games or wallet require a backend.

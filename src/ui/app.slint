@@ -1,9 +1,7 @@
-import { Booking } from "booking/booking.slint";
-import { Stations, StationItem } from "stations/stations.slint";
-export { StationItem }
-import { Dashboard } from "dashboard/dashboard.slint";
 import { LoginScreen } from "login/screen.slint";
+import { AppShell, Page } from "shell.slint";
 import { Palette } from "std-widgets.slint";
+export { Page }
 export component ClientView inherits Window {
     title: "Ninety Gaming House — Gaming Client";
     preferred-width: 1280px;
@@ -22,22 +20,8 @@ export component ClientView inherits Window {
     in property <string> message;
     in-out property <string> password;
     in property <string> player-name;
-    in property <bool> show-stations: false;
-    in property <[StationItem]> stations;
-    in property <int> selected-station: -1;
-    in property <StationItem> station-detail;
-    in property <bool> show-booking: false;
-    in property <string> booking-reference;
-    callback booking-confirm(string, int, int);
-    in property <string> booking-total;
-    in property <string> booking-summary;
-    in property <string> booking-error;
-    callback booking-requested();
-    callback booking-review(string, int, int);
-    callback booking-changed();
-    callback station-selected(int);
-    callback stations-requested();
-    callback dashboard-requested();
+    in property <Page> page: Page.dashboard;
+    callback navigate(Page);
     callback logout-requested();
     callback login-requested(string, string, bool);
     if !root.authenticated: LoginScreen {
@@ -50,28 +34,10 @@ export component ClientView inherits Window {
         password <=> root.password;
         login-requested(u, p, r) => { root.login-requested(u, p, r); }
     }
-    if root.authenticated && !root.show-stations: Dashboard { stations-requested => { root.stations-requested(); } player-name: root.player-name; logout-requested => { root.logout-requested(); } }
-    if root.authenticated && root.show-stations && !root.show-booking: Stations {
-        stations: root.stations;
-        selected: root.selected-station;
-        detail: root.station-detail;
-        book => { root.booking-requested(); }
-        select(index) => { root.station-selected(index); }
-        back => { root.dashboard-requested(); }
+    if root.authenticated: AppShell {
+        player-name: root.player-name;
+        page: root.page;
+        navigate(page) => { root.navigate(page); }
         logout => { root.logout-requested(); }
-    }
-    if root.authenticated && root.show-booking: Booking {
-        reference: root.booking-reference;
-        confirm(date, start, end) => { root.booking-confirm(date, start, end); }
-        dashboard => { root.dashboard-requested(); }
-        station: root.station-detail.name;
-        rate: root.station-detail.rate;
-        total: root.booking-total;
-        summary: root.booking-summary;
-        error: root.booking-error;
-        back => { root.stations-requested(); }
-        logout => { root.logout-requested(); }
-        changed => { root.booking-changed(); }
-        review(date, start, end) => { root.booking-review(date, start, end); }
     }
 }

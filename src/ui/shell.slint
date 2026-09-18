@@ -1,0 +1,50 @@
+import { Button, ScrollView } from "std-widgets.slint";
+import { Dashboard } from "dashboard/dashboard.slint";
+import { Games } from "games/games.slint";
+import { Wallet } from "wallet/wallet.slint";
+export enum Page { dashboard, games, wallet }
+export component AppShell inherits Rectangle {
+    in property <string> player-name;
+    in property <Page> page;
+    callback navigate(Page);
+    callback logout();
+    background: #00121d;
+    VerticalLayout { spacing: 0px;
+        Rectangle { height: 78px; background: #031520;
+            HorizontalLayout { padding: 22px; spacing: 24px;
+                Text { text: "NINETY"; color: white; font-size: 29px; font-weight: 900; vertical-alignment: center; }
+                Text { text: "GAMING HOUSE"; color: #91acbf; font-size: 11px; vertical-alignment: center; }
+                Text { text: "●  DEMO"; color: #00dab0; vertical-alignment: center; horizontal-alignment: right; }
+                Text { text: root.player-name; color: white; vertical-alignment: center; horizontal-stretch: 0; }
+                Button { text: "Log out"; width: 95px; clicked => { root.logout(); } }
+            }
+        }
+        HorizontalLayout { spacing: 0px;
+            Rectangle { width: 205px; background: @linear-gradient(150deg, #092130, #00101b);
+                VerticalLayout { padding-top: 22px; padding-bottom: 30px; spacing: 8px;
+                    for item in [
+                        { label: "Dashboard", page: Page.dashboard },
+                        { label: "Games", page: Page.games },
+                        { label: "Wallet", page: Page.wallet }
+                    ]: Rectangle { height: 54px; background: root.page == item.page ? @linear-gradient(90deg, #613018, #11202b) : transparent;
+                        Rectangle { x: 0px; width: 4px; height: parent.height; background: root.page == item.page ? #ff591e : transparent; }
+                        action := Button { text: item.label; opacity: 0; clicked => { root.navigate(item.page); } }
+                        border-width: action.has-focus ? 1px : 0px;
+                        border-color: #45cfff;
+                        Text { x: 25px; width: parent.width - 25px; height: parent.height; text: item.label; color: root.page == item.page ? #ffaa36 : #c4d6e4; vertical-alignment: center; }
+                    }
+                    Rectangle { vertical-stretch: 1; background: transparent; }
+                    Text { text: "MORE\nTHAN A\nGAME"; color: white; font-size: 22px; height: 95px; horizontal-alignment: center; }
+                }
+            }
+            ScrollView { viewport-width: self.width;
+                if root.page == Page.dashboard: Dashboard { player-name: root.player-name; games => { root.navigate(Page.games); } wallet => { root.navigate(Page.wallet); } }
+                if root.page == Page.games: Games {}
+                if root.page == Page.wallet: Wallet {}
+            }
+        }
+        Rectangle { height: 36px; background: #02101a;
+            Text { x: 25px; text: "NINETY GAMING HOUSE   |   ESPORTS   |   COMMUNITY   |   PREMIUM EXPERIENCE"; color: #7390a4; font-size: 9px; vertical-alignment: center; }
+        }
+    }
+}

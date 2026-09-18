@@ -101,94 +101,36 @@ fn login_callback_validates_and_delivers_worker_results() {
             file.write_all(pixels.as_bytes()).unwrap();
         }
     }
-    ui.invoke_stations_requested();
-    assert!(ui.get_show_stations());
-    assert_eq!(ui.get_selected_station(), -1);
-    for invalid in [-1, 3, 5, 7, 99] {
-        ui.invoke_station_selected(invalid);
-        assert_eq!(ui.get_selected_station(), -1);
-    }
-    ui.invoke_station_selected(2);
-    assert_eq!(ui.get_station_detail().name, "PC-03");
-    assert_eq!(ui.get_station_detail().gpu, "RTX 4090");
-    ui.invoke_station_selected(3);
-    assert_eq!(ui.get_selected_station(), 2);
-    for (width, height) in [(1120, 830), (1920, 1080), (2560, 1440)] {
-        window.set_size(slint::PhysicalSize::new(width, height));
-        window.request_redraw();
-        let mut pixels = slint::SharedPixelBuffer::<slint::Rgb8Pixel>::new(width, height);
-        assert!(window.draw_if_needed(|renderer| {
-            renderer.render(pixels.make_mut_slice(), width as usize);
-        }));
-        if let Some(directory) = std::env::var_os("NINETY_TEST_CAPTURE_DIR") {
-            use std::io::Write;
-            let path = std::path::PathBuf::from(directory).join(format!("stations-{width}.ppm"));
-            let mut file = std::fs::File::create(path).expect("stations capture");
-            write!(file, "P6\n{width} {height}\n255\n").unwrap();
-            file.write_all(pixels.as_bytes()).unwrap();
+    for page in [
+        crate::ui::Page::Games,
+        crate::ui::Page::Wallet,
+        crate::ui::Page::Dashboard,
+    ] {
+        ui.invoke_navigate(page);
+        assert_eq!(ui.get_page(), page);
+        for (width, height) in [(1120, 830), (1920, 1080), (2560, 1440)] {
+            window.set_size(slint::PhysicalSize::new(width, height));
+            window.request_redraw();
+            let mut pixels = slint::SharedPixelBuffer::<slint::Rgb8Pixel>::new(width, height);
+            assert!(window.draw_if_needed(|renderer| {
+                renderer.render(pixels.make_mut_slice(), width as usize);
+            }));
+            if let Some(directory) = std::env::var_os("NINETY_TEST_CAPTURE_DIR") {
+                use std::io::Write;
+                let path =
+                    std::path::PathBuf::from(directory).join(format!("{page:?}-{width}.ppm"));
+                let mut file = std::fs::File::create(path).expect("capture");
+                write!(file, "P6\n{width} {height}\n255\n").unwrap();
+                file.write_all(pixels.as_bytes()).unwrap();
+            }
         }
     }
-    ui.invoke_booking_requested();
-    assert!(ui.get_show_booking());
-    ui.invoke_booking_review("2099-02-30".into(), 14, 18);
-    assert!(!ui.get_booking_error().is_empty());
-    assert!(ui.get_booking_total().is_empty());
-    ui.invoke_booking_review("2099-12-31".into(), 14, 18);
-    assert_eq!(ui.get_booking_total(), "12.00 €");
-    assert_eq!(
-        ui.get_booking_summary(),
-        "2099-12-31\n14:00 – 18:00 UTC\n4 hours"
-    );
-    assert!(ui.get_booking_error().is_empty());
-    for (width, height) in [(1120, 830), (1920, 1080), (2560, 1440)] {
-        window.set_size(slint::PhysicalSize::new(width, height));
-        window.request_redraw();
-        let mut pixels = slint::SharedPixelBuffer::<slint::Rgb8Pixel>::new(width, height);
-        assert!(window.draw_if_needed(|renderer| {
-            renderer.render(pixels.make_mut_slice(), width as usize);
-        }));
-        if let Some(directory) = std::env::var_os("NINETY_TEST_CAPTURE_DIR") {
-            use std::io::Write;
-            let path = std::path::PathBuf::from(directory).join(format!("booking-{width}.ppm"));
-            let mut file = std::fs::File::create(path).expect("booking capture");
-            write!(file, "P6\n{width} {height}\n255\n").unwrap();
-            file.write_all(pixels.as_bytes()).unwrap();
-        }
-    }
-    ui.invoke_booking_confirm("2099-12-31".into(), 14, 18);
-    let reference = ui.get_booking_reference();
-    assert!(reference.starts_with("DEMO-"));
-    ui.invoke_booking_confirm("2099-12-31".into(), 14, 18);
-    assert_eq!(ui.get_booking_reference(), reference);
-    ui.invoke_booking_changed();
-    assert!(ui.get_booking_reference().is_empty());
-    ui.invoke_booking_confirm("2099-12-31".into(), 14, 18);
-    assert!(ui.get_booking_reference().is_empty());
-    assert!(ui.get_booking_total().is_empty());
-    ui.invoke_stations_requested();
-    assert!(!ui.get_show_booking());
-    ui.invoke_station_selected(0);
-    ui.invoke_booking_requested();
-    assert!(ui.get_booking_total().is_empty());
-    ui.invoke_stations_requested();
-    ui.invoke_station_selected(2);
-    ui.invoke_dashboard_requested();
-    assert!(!ui.get_show_stations());
-    ui.invoke_station_selected(0);
-    assert_eq!(ui.get_selected_station(), 2);
-    ui.invoke_stations_requested();
+    ui.invoke_navigate(crate::ui::Page::Wallet);
     ui.invoke_logout_requested();
     assert!(!ui.get_authenticated());
-    assert!(!ui.get_show_stations());
-    assert_eq!(ui.get_selected_station(), -1);
-    ui.invoke_stations_requested();
-    ui.invoke_station_selected(0);
-    assert!(!ui.get_show_stations());
-    assert_eq!(ui.get_selected_station(), -1);
-    ui.invoke_booking_requested();
-    ui.invoke_booking_review("2099-12-31".into(), 14, 18);
-    assert!(!ui.get_show_booking());
-    assert!(ui.get_booking_total().is_empty());
+    assert_eq!(ui.get_page(), crate::ui::Page::Dashboard);
+    ui.invoke_navigate(crate::ui::Page::Games);
+    assert_eq!(ui.get_page(), crate::ui::Page::Dashboard);
     assert!(ui.get_player_name().is_empty());
     assert!(ui.get_password().is_empty());
     ui.invoke_login_requested("player".into(), "password".into(), false);
