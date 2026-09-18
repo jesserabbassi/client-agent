@@ -1,12 +1,17 @@
 [package]
-name = "slint-rust-template"
+name = "ninety-client-agent"
 version = "0.1.0"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-slint = "1.16.1"
+slint = { version = "1.16.1", default-features = false, features = ["std", "backend-winit", "renderer-software", "compat-1-2"] }
+
+[features]
+default = ["mock-auth"]
+# Development only; disable for production.
+mock-auth = []
 
 [build-dependencies]
 slint-build = "1.16.1"

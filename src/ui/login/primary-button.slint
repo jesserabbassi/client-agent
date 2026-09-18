@@ -1,0 +1,20 @@
+import { Button } from "std-widgets.slint";
+export component PrimaryButton inherits Rectangle {
+    in property <string> label;
+    in property <bool> active: true;
+    callback clicked();
+    forward-focus: action;
+    border-width: action.has-focus ? 2px : 0px;
+    border-color: #70e2ff;
+    height: 56px;
+    border-radius: 6px;
+    background: !root.active ? #263b50 : action.pressed ? #d94319 : @linear-gradient(90deg, #ff421b, #ff7921);
+    action := Button {
+        width: parent.width; height: parent.height;
+        text: root.label;
+        enabled: root.active;
+        opacity: 0;
+        clicked => { root.clicked(); }
+    }
+    Text { text: root.label; color: white; font-size: 17px; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
+}

@@ -1,0 +1,25 @@
+import { LineEdit } from "std-widgets.slint";
+export component InputField inherits Rectangle {
+    in property <string> label;
+    in property <string> placeholder;
+    in property <bool> secret: false;
+    in property <bool> active: true;
+    in-out property <string> value;
+    callback accepted();
+    forward-focus: editor;
+    height: 82px;
+    background: transparent;
+    VerticalLayout {
+        spacing: 9px;
+        Text { text: root.label; color: #a2b4ce; font-size: 12px; font-weight: 600; height: 18px; }
+        editor := LineEdit {
+            text <=> root.value;
+            placeholder-text: root.placeholder;
+            input-type: root.secret ? InputType.password : InputType.text;
+            enabled: root.active;
+            font-size: 16px;
+            height: 52px;
+            accepted => { root.accepted(); }
+        }
+    }
+}
