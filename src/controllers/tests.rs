@@ -38,6 +38,15 @@ fn login_callback_validates_and_delivers_worker_results() {
     super::bind(&ui);
     use slint::ComponentHandle;
     ui.show().expect("show UI");
+    use crate::ui::Activity;
+    use slint::Model;
+    ui.global::<Activity>().invoke_start_session(1);
+    assert!(!ui.global::<Activity>().get_session_active());
+    ui.global::<Activity>().invoke_top_up("20".into());
+    ui.global::<Activity>().invoke_reserve(0, 1);
+    assert_eq!(ui.global::<Activity>().get_balance(), "0.00 €");
+    assert_eq!(ui.global::<Activity>().get_reservations().row_count(), 0);
+
     for (width, height) in [(1920, 1080), (2560, 1440)] {
         window.set_size(slint::PhysicalSize::new(width, height));
         window.request_redraw();
@@ -113,6 +122,55 @@ fn login_callback_validates_and_delivers_worker_results() {
     assert!(!ui.get_busy());
     assert!(events.try_recv().is_err());
     assert_eq!(ui.get_player_name(), "player");
+    let activity = ui.global::<Activity>();
+    activity.invoke_choose_game("Valorant".into());
+    assert!(activity.get_selected_game().is_empty());
+    activity.invoke_reserve(0, 2);
+    activity.invoke_reserve(0, 2);
+    assert_eq!(activity.get_reservations().row_count(), 1);
+    activity.invoke_start(1);
+    assert!(!activity.get_session_active());
+    activity.invoke_top_up("20.00".into());
+    activity.invoke_start(1);
+    activity.invoke_start(1);
+    assert!(activity.get_session_active());
+    assert_eq!(ui.get_page(), crate::ui::Page::Games);
+    activity.invoke_choose_game("Valorant".into());
+    assert_eq!(activity.get_selected_game(), "Valorant");
+    activity.invoke_choose_game("Unknown game".into());
+    assert_eq!(activity.get_selected_game(), "Valorant");
+    activity.invoke_choose_game("Counter-Strike 2".into());
+    assert_eq!(activity.get_selected_game(), "Counter-Strike 2");
+    assert_eq!(activity.get_balance(), "8.00 €");
+    assert_eq!(activity.get_transactions().row_count(), 2);
+    ui.invoke_logout_requested();
+    assert!(ui.get_authenticated());
+    activity.invoke_end();
+    assert!(activity.get_selected_game().is_empty());
+    assert_eq!(ui.get_page(), crate::ui::Page::Dashboard);
+    activity.invoke_end();
+    activity.invoke_start(1);
+    assert!(!activity.get_session_active());
+    assert_eq!(activity.get_balance(), "8.00 €");
+    assert_eq!(
+        activity.get_reservations().row_data(0).unwrap().status,
+        "Completed"
+    );
+
+    activity.invoke_start_session(3);
+    assert!(!activity.get_session_active());
+    assert_eq!(activity.get_reservations().row_count(), 1);
+    activity.invoke_start_session(1);
+    assert!(activity.get_session_active());
+    assert_eq!(ui.get_page(), crate::ui::Page::Games);
+    assert_eq!(activity.get_balance(), "2.00 €");
+    activity.invoke_start_session(1);
+    assert_eq!(activity.get_transactions().row_count(), 3);
+    assert_eq!(activity.get_reservations().row_count(), 2);
+    activity.invoke_choose_game("Valorant".into());
+    assert_eq!(activity.get_selected_game(), "Valorant");
+    activity.invoke_end();
+
     for (width, height) in [(1120, 830), (1920, 1080), (2560, 1440)] {
         window.set_size(slint::PhysicalSize::new(width, height));
         window.request_redraw();

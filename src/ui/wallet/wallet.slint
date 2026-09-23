@@ -1,45 +1,36 @@
-import { Button } from "std-widgets.slint";
+import { Button, LineEdit } from "std-widgets.slint";
+import { Activity } from "../shared/activity.slint";
 export component Wallet inherits Rectangle {
     background: #00121d;
     min-height: 690px;
     VerticalLayout { padding: 26px; spacing: 20px;
         Text { text: "Wallet"; color: white; font-size: 30px; font-weight: 700; height: 42px; }
-        Text { text: "Your balance and transaction history.  ·  Sample data"; color: #9fb8c9; height: 25px; }
-        HorizontalLayout { spacing: 14px; height: 145px;
-            for item in [
-                { value: "48.50 €", label: "Current balance", accent: #8a43b5 },
-                { value: "12.00 €", label: "Bonus balance", accent: #007fb1 },
-                { value: "120", label: "Loyalty points", accent: #008a68 }
-            ]: Rectangle { background: @linear-gradient(120deg, item.accent, #051925); border-radius: 7px;
-                VerticalLayout { padding: 24px; spacing: 14px;
-                    Text { text: item.value; color: white; font-size: 30px; font-weight: 700; }
-                    Text { text: item.label; color: #c1d5e2; }
+        Text { text: "Your funds, your playtime. All transactions in one place."; color: #9fb8c9; height: 25px; }
+        Rectangle { height: 140px; background: @linear-gradient(120deg, #66378a, #051925); border-radius: 8px;
+            VerticalLayout { padding: 24px; spacing: 12px;
+                Text { text: "AVAILABLE BALANCE"; color: #c1d5e2; }
+                Text { text: Activity.balance; color: white; font-size: 38px; font-weight: 700; }
+            }
+        }
+        Rectangle { height: 180px; background: #041b28; border-radius: 8px;
+            VerticalLayout { padding: 22px; spacing: 12px;
+                Text { text: "Add money"; color: white; font-size: 22px; }
+                Text { text: "Demo top-up · No payment is taken · Enter 1.00–500.00 €"; color: #9fb8c9; }
+                HorizontalLayout { spacing: 12px;
+                    amount := LineEdit { placeholder-text: "Amount in EUR, e.g. 20.00"; accepted => { Activity.top-up(self.text); } }
+                    Button { text: "Add demo funds"; primary: true; clicked => { Activity.top-up(amount.text); } }
                 }
             }
         }
-        Rectangle { background: #041b28; border-width: 1px; border-color: #154257; border-radius: 7px;
-            VerticalLayout { padding: 22px; spacing: 16px;
-                Text { text: "Transaction History"; color: white; font-size: 23px; height: 35px; }
-                HorizontalLayout { height: 28px;
-                    Text { text: "DATE"; color: #7395ac; }
-                    Text { text: "DESCRIPTION"; color: #7395ac; }
-                    Text { text: "AMOUNT"; color: #7395ac; horizontal-alignment: right; }
-                }
-                for row in [
-                    { date: "Apr 18, 2024", label: "Wallet top up", amount: "+20.00 €", credit: true },
-                    { date: "Apr 16, 2024", label: "Game session", amount: "−12.00 €", credit: false },
-                    { date: "Apr 15, 2024", label: "Welcome bonus", amount: "+5.00 €", credit: true },
-                    { date: "Apr 12, 2024", label: "Game session", amount: "−9.00 €", credit: false },
-                    { date: "Apr 10, 2024", label: "Wallet top up", amount: "+30.00 €", credit: true }
-                ]: Rectangle { height: 48px; background: #082332; border-radius: 4px;
-                    HorizontalLayout { padding: 12px;
-                        Text { text: row.date; color: #a5bac9; }
-                        Text { text: row.label; color: white; }
-                        Text { text: row.amount; color: row.credit ? #00dab0 : #ff7945; horizontal-alignment: right; }
-                    }
-                }
+        Text { text: Activity.message; color: #54cced; wrap: word-wrap; min-height: 30px; }
+        Text { text: "Transaction history"; color: white; font-size: 23px; height: 35px; }
+        if Activity.transactions.length == 0: Text { text: "No transactions yet. Add demo funds to start playing."; color: #9fb8c9; height: 50px; }
+        for row in Activity.transactions: Rectangle { height: 58px; background: #082332; border-radius: 4px;
+            HorizontalLayout { padding: 16px; spacing: 12px;
+                Text { text: row.reference; color: #7395ac; vertical-alignment: center; }
+                Text { text: row.description; color: white; vertical-alignment: center; }
+                Text { text: row.amount; color: #54cced; horizontal-alignment: right; vertical-alignment: center; }
             }
         }
-        Text { text: "Demo wallet · Top-ups and payment methods will be available when the payment backend is connected."; color: #7897ac; wrap: word-wrap; height: 40px; }
     }
 }

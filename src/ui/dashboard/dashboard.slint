@@ -1,58 +1,60 @@
-import { Button } from "std-widgets.slint";
+import { Button, ComboBox } from "std-widgets.slint";
+import { Activity } from "../shared/activity.slint";
 export component Dashboard inherits Rectangle {
     in property <string> player-name;
     callback games();
     callback wallet();
     background: #00121d;
-    min-height: 690px;
-    VerticalLayout { padding: 26px; spacing: 20px;
+    min-height: 720px;
+    VerticalLayout { padding: 26px; spacing: 18px;
         Text { text: "Welcome back, " + root.player-name + "!"; color: white; font-size: 30px; font-weight: 700; height: 42px; }
-        Text { text: "Your games. Your wallet. Your gaming home.  ·  Sample data"; color: #9fb8c9; height: 25px; }
-        HorizontalLayout { spacing: 14px; height: 115px;
-            for stat in [
-                { value: "12h", label: "Total playtime", accent: #13b6ff },
-                { value: "5", label: "Games played", accent: #ff9c28 },
-                { value: "48.50 €", label: "Wallet balance", accent: #c76aff }
-            ]: Rectangle { background: #061d2c; border-width: 1px; border-color: stat.accent; border-radius: 7px;
-                VerticalLayout { padding: 22px; spacing: 10px;
-                    Text { text: stat.value; color: white; font-size: 29px; font-weight: 700; }
-                    Text { text: stat.label; color: #9fb8c9; }
+        Text { text: "Reserve your spot. Start playing. Make it your session."; color: #9fb8c9; height: 25px; }
+        HorizontalLayout { spacing: 18px; height: 300px;
+            Rectangle { background: @linear-gradient(120deg, #753511, #102031); border-radius: 8px;
+                VerticalLayout { padding: 22px; spacing: 12px;
+                    Text { text: "YOUR SESSION"; color: #ffaa36; }
+                    Text { text: Activity.session-label; color: white; font-size: 20px; wrap: word-wrap; }
+                    Text { text: Activity.selected-game == "" ? "Choose a game after starting your session" : "Game: " + Activity.selected-game; color: #9fb8c9; wrap: word-wrap; }
+                    if Activity.session-active: Button { text: "Choose / change game →"; clicked => { root.games(); } }
+                    if !Activity.session-active: VerticalLayout { spacing: 10px;
+                        Text { text: "Play now · No reservation needed"; color: #ffaa36; }
+                        quick-duration := ComboBox { model: ["1 hour · 6.00 €", "2 hours · 12.00 €", "3 hours · 18.00 €"]; }
+                        Button { text: "Start a session →"; primary: true; height: 52px; clicked => { Activity.start-session(quick-duration.current-index + 1); } }
+                        Text { text: "Charged now · No refund for early finish"; color: #9fb8c9; font-size: 12px; wrap: word-wrap; }
+                    }
+                    if Activity.session-active: Button { text: "End session"; height: 48px; clicked => { Activity.end(); } }
+                }
+            }
+            Rectangle { background: #092333; border-radius: 8px;
+                VerticalLayout { padding: 22px; spacing: 12px;
+                    Text { text: "WALLET BALANCE"; color: #9fb8c9; }
+                    Text { text: Activity.balance; color: white; font-size: 30px; font-weight: 700; }
+                    Button { text: "Wallet & transactions →"; clicked => { root.wallet(); } }
                 }
             }
         }
-        HorizontalLayout { spacing: 18px; height: 220px;
-            Rectangle { horizontal-stretch: 2; background: @linear-gradient(115deg, #753511, #102031, #061622); border-radius: 7px;
-                VerticalLayout { padding: 26px; spacing: 14px;
-                    Text { text: "GAME OF THE WEEK"; color: #ffab37; font-size: 12px; }
-                    Text { text: "Counter-Strike 2"; color: white; font-size: 32px; font-weight: 800; }
-                    Text { text: "Competitive. Strategic. Unstoppable."; color: #b9cbd8; }
-                    Button { text: "Browse games →"; clicked => { root.games(); } }
-                }
-            }
-            Rectangle { background: #041b28; border-width: 1px; border-color: #154257; border-radius: 7px;
-                VerticalLayout { padding: 20px; spacing: 16px;
-                    Text { text: "Quick Actions"; color: white; font-size: 22px; }
-                    Button { text: "Games library"; clicked => { root.games(); } }
-                    Button { text: "View wallet"; clicked => { root.wallet(); } }
+        Rectangle { background: #041b28; border-radius: 8px; height: 180px;
+            VerticalLayout { padding: 22px; spacing: 12px;
+                Text { text: "Make a reservation"; color: white; font-size: 22px; }
+                Text { text: "Next available · 6.00 € / hour · Charged when you start · No refund for early finish"; color: #9fb8c9; wrap: word-wrap; }
+                HorizontalLayout { spacing: 12px;
+                    station := ComboBox { model: ["Station 01", "Station 02", "Station 03", "Station 04"]; }
+                    duration := ComboBox { model: ["1 hour · 6.00 €", "2 hours · 12.00 €", "3 hours · 18.00 €"]; }
+                    Button { text: "Reserve station"; primary: true; clicked => { Activity.reserve(station.current-index, duration.current-index + 1); } }
                 }
             }
         }
-        HorizontalLayout { spacing: 18px; height: 190px;
-            Rectangle { background: #041b28; border-width: 1px; border-color: #154257; border-radius: 7px;
-                VerticalLayout { padding: 20px; spacing: 16px;
-                    Text { text: "Popular Games"; color: white; font-size: 22px; }
-                    Text { text: "Counter-Strike 2   ·   Valorant\nLeague of Legends   ·   Fortnite"; color: #a5bac9; font-size: 15px; }
-                    Button { text: "View all games →"; clicked => { root.games(); } }
-                }
-            }
-            Rectangle { background: #041b28; border-width: 1px; border-color: #154257; border-radius: 7px;
-                VerticalLayout { padding: 20px; spacing: 15px;
-                    Text { text: "Recent Activity"; color: white; font-size: 22px; }
-                    Text { text: "Wallet top up    +20.00 €"; color: #00dab0; }
-                    Text { text: "Played Valorant    3h 20m"; color: #a5bac9; }
-                    Text { text: "Played Counter-Strike 2    2h"; color: #a5bac9; }
-                }
+        Text { text: Activity.message; color: #54cced; wrap: word-wrap; min-height: 30px; }
+        Text { text: "Your reservations"; color: white; font-size: 22px; height: 32px; }
+        if Activity.reservations.length == 0: Text { text: "No reservations yet. Choose a station above to get started."; color: #9fb8c9; height: 65px; }
+        for row in Activity.reservations: Rectangle { height: 68px; background: #082332; border-radius: 6px;
+            HorizontalLayout { padding: 14px; spacing: 12px;
+                Text { text: row.station; color: white; vertical-alignment: center; }
+                Text { text: row.duration + " · " + row.price; color: #9fb8c9; vertical-alignment: center; }
+                Text { text: row.status; color: #ffaa36; vertical-alignment: center; }
+                Button { text: "Start session"; enabled: row.status == "Reserved" && !Activity.session-active; clicked => { Activity.start(row.id); } }
             }
         }
+        Text { text: "Demo workspace · Reservations and wallet are kept until the app closes."; color: #7390a4; height: 26px; }
     }
 }

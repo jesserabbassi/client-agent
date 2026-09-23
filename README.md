@@ -13,11 +13,11 @@ Development credentials: **player / password**, followed by demo verification co
 
 ## Pages
 
-- **Dashboard:** sample playtime, games played, wallet balance, popular games, recent activity, and links to Games and Wallet.
-- **Games:** sample game catalog with category highlighting. Game launching is not connected.
-- **Wallet:** sample balance, bonus, loyalty points, and transaction history. No real payments or top-ups are performed.
+- **Dashboard:** use **Start a session** to play immediately without a prior reservation (choose 1–3 hours; an available demo station is assigned), or reserve one of four demo stations for 1–3 hours, see reservations, and start/end a session. Sessions cost 6.00 € per reserved hour, charged once when starting. Early finishes do not refund the fixed price.
+- **Games:** starting a session opens the game picker. Choose or change the session’s game, then end the session from Games or Dashboard. Game selection is demo state; game launching is not connected.
+- **Wallet:** shared balance, demo top-ups from 1.00–500.00 €, and transaction history for credits and session charges. No real money is moved.
 
-The sidebar contains only these three pages. Login and logout are retained. The former station and booking flows and their associated code were removed.
+The sidebar contains only these three pages. Login and logout are retained. Reservations are for the next available slot in this local demo. Only one session can run at a time; end it before logging out. State survives logout in this single-demo-account app and resets when the app closes. No station availability service, scheduled bookings, automatic session expiry, or payment backend is connected.
 
 ## Layered architecture
 
@@ -33,6 +33,7 @@ src/
     wallet/            Wallet presentation
     mod.rs             Generated Slint bindings
   controllers/
+    activity_controller.rs Reservations, sessions and demo wallet state
     agent_controller.rs  Navigation, login wiring and logout
     login_controller.rs  Authentication callbacks and UI state
     tests.rs             Headless flow and rendering checks

@@ -1,0 +1,17 @@
+export struct Reservation { id: int, station: string, duration: string, price: string, status: string }
+export struct Transaction { reference: string, description: string, amount: string }
+export global Activity {
+    in property <string> balance: "0.00 €";
+    in property <[Reservation]> reservations;
+    in property <[Transaction]> transactions;
+    in property <bool> session-active: false;
+    in property <string> session-label: "No active session";
+    in property <string> message;
+    in property <string> selected-game;
+    callback choose-game(string);
+    callback reserve(int, int);
+    callback start(int);
+    callback start-session(int);
+    callback end();
+    callback top-up(string);
+}
