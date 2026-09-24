@@ -1,11 +1,11 @@
 use crate::{
-    communication::server_client::ServerClient,
+    communication::auth_client::AuthClient,
     models::auth::{AuthError, LoginRequest, LoginResponse},
 };
-pub(crate) struct LoginService<C: ServerClient> {
+pub(crate) struct LoginService<C: AuthClient> {
     client: C,
 }
-impl<C: ServerClient> LoginService<C> {
+impl<C: AuthClient> LoginService<C> {
     pub(crate) fn new(client: C) -> Self {
         Self { client }
     }
@@ -28,7 +28,7 @@ impl<C: ServerClient> LoginService<C> {
 mod tests {
     use super::*;
     struct FakeClient;
-    impl ServerClient for FakeClient {
+    impl AuthClient for FakeClient {
         fn authenticate(&self, request: &LoginRequest) -> Result<LoginResponse, AuthError> {
             if request.password == "password" {
                 Ok(LoginResponse {

@@ -1,3 +1,4 @@
+import { Theme } from "../shared/design.slint";
 import { CheckBox } from "std-widgets.slint";
 import { InputField } from "input-field.slint";
 import { PrimaryButton } from "primary-button.slint";
@@ -9,36 +10,36 @@ export component LoginPanel inherits Rectangle {
     in property <string> message;
     in-out property <string> password;
     callback login-requested(string, string, bool);
-    background: @linear-gradient(135deg, #101f32, #08111e);
+    background: Theme.surface;
     border-width: 1px;
-    border-color: #29415b;
-    border-radius: 12px;
-    Rectangle { x: 32px; y: 0px; width: 68px; height: 3px; background: #ff5526; }
+    border-color: Theme.border;
+    border-radius: 16px;
+    Rectangle { x: 32px; y: 0px; width: 68px; height: 3px; background: Theme.accent; }
     VerticalLayout {
         padding: 36px;
         spacing: 14px;
-        Text { text: "YOUR NEXT GAME STARTS HERE"; color: #54cced; font-size: 11px; font-weight: 600; height: 18px; }
+        Text { text: "YOUR NEXT GREAT SESSION"; color: Theme.cyan; font-size: 11px; font-weight: 600; height: 18px; }
         HorizontalLayout {
             spacing: 8px; height: 38px;
-            Text { horizontal-stretch: 0; text: "WELCOME"; color: #f4f7ff; font-size: 30px; font-weight: 800; }
-            Text { horizontal-stretch: 0; text: "PLAYER"; color: #ff5c30; font-size: 30px; font-weight: 800; }
+            Text { horizontal-stretch: 0; text: "Welcome"; color: Theme.text; font-size: 30px; font-weight: 800; }
+            Text { horizontal-stretch: 0; text: "back."; color: Theme.accent; font-size: 30px; font-weight: 800; }
             Rectangle { horizontal-stretch: 1; background: transparent; }
         }
-        Text { text: "Sign in to start your gaming session"; color: #91a6c1; font-size: 15px; height: 24px; }
+        Text { text: "Sign in to start your gaming session"; color: Theme.muted; font-size: 15px; height: 24px; }
         username := InputField { label: "USERNAME OR EMAIL"; placeholder: "Enter your username or email"; active: !root.busy && !root.authenticated; accepted => { password-field.focus(); } }
         password-field := InputField { label: "PASSWORD"; placeholder: "Enter your password"; secret: true; value <=> root.password; active: !root.busy && !root.authenticated; accepted => { root.login-requested(username.value, root.password, remember.checked); } }
         remember := CheckBox { text: "Remember me"; enabled: !root.busy && !root.authenticated; height: 28px; }
         PrimaryButton {
-            label: root.busy ? "SIGNING IN…" : root.authenticated ? "AUTHENTICATED  ✓" : "LOGIN   →";
+            label: root.busy ? "SIGNING IN…" : root.authenticated ? "AUTHENTICATED  ✓" : "Let’s play   →";
             active: !root.busy && !root.authenticated;
             clicked => { root.login-requested(username.value, root.password, remember.checked); }
         }
-        Text { text: root.message; color: root.authenticated ? #21dfb0 : root.busy ? #91a6c1 : #ff9b80; font-size: 13px; wrap: word-wrap; height: 38px; }
+        Text { text: root.message; color: root.authenticated ? #21dfb0 : root.busy ? Theme.muted : #ff9b80; font-size: 13px; wrap: word-wrap; height: 38px; }
         Rectangle { height: 1px; background: #25384e; }
         HorizontalLayout {
             spacing: 9px; height: 28px;
             Rectangle { width: 8px; height: 8px; border-radius: 4px; background: root.connection-problem ? #ff633c : root.busy ? #e5b15c : #15dab0; }
-            Text { text: root.status-text; color: #91a6c1; font-size: 11px; vertical-alignment: center; }
+            Text { text: root.status-text; color: Theme.muted; font-size: 11px; vertical-alignment: center; }
         }
     }
 }

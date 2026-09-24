@@ -1,3 +1,4 @@
+import { Theme } from "../shared/design.slint";
 import { LoginPanel } from "login.slint";
 export component LoginScreen inherits Rectangle {
     in property <bool> busy;
@@ -8,7 +9,7 @@ export component LoginScreen inherits Rectangle {
     in property <string> message;
     in-out property <string> password;
     callback login-requested(string, string, bool);
-    Rectangle { x: root.width * 0.45; width: root.width * 0.55; height: root.height; background: @linear-gradient(120deg, #0d2035, #060d17); }
+    Rectangle { x: root.width * 0.45; width: root.width * 0.55; height: root.height; background: @linear-gradient(120deg, #17252c, #0b1019); }
     for i in 9: Rectangle { x: root.width * 0.05 + i * root.width / 9; width: 1px; height: root.height; background: #122135; opacity: 0.4; }
     Rectangle { x: 0px; y: root.height - 170px; width: root.width; height: 1px; background: #1b3048; }
     Rectangle {
@@ -17,15 +18,15 @@ export component LoginScreen inherits Rectangle {
         width: min(root.width - 80px, 1240px); height: root.height - 80px;
         HorizontalLayout {
             y: 0px; width: parent.width; height: 56px; spacing: 14px;
-            Rectangle { width: 42px; height: 42px; border-width: 2px; border-color: #ff572b; border-radius: 5px;
+            Rectangle { width: 42px; height: 42px; border-width: 2px; border-color: Theme.accent; border-radius: 5px;
                 Text { text: "N"; color: white; font-size: 28px; font-weight: 900; horizontal-alignment: center; vertical-alignment: center; }
             }
             VerticalLayout { spacing: 3px;
-                Text { text: "NINETY"; color: #f3f6ff; font-size: 25px; font-weight: 800; }
+                Text { text: "NINETY"; color: Theme.text; font-size: 25px; font-weight: 800; }
                 Text { text: "G A M I N G   H O U S E"; color: #a2b4cc; font-size: 9px; }
             }
             Rectangle { horizontal-stretch: 1; background: transparent; }
-            Text { text: "GAMING CLIENT  /  " + (root.development-mode ? "DEVELOPMENT" : "PC-01"); color: #748ca9; font-size: 11px; vertical-alignment: center; }
+            Text { text: "NINETY  /  " + (root.development-mode ? "DEMO SPACE" : "PLAYER ACCESS"); color: Theme.subtle; font-size: 11px; vertical-alignment: center; }
         }
         HorizontalLayout {
             y: (parent.height - 630px) / 2; width: parent.width; height: 630px;
@@ -33,17 +34,17 @@ export component LoginScreen inherits Rectangle {
             Rectangle { width: parent.width - 550px; background: transparent;
                 VerticalLayout {
                     alignment: center; spacing: 20px;
-                    Text { text: "THIS IS YOUR ARENA."; color: #67cae6; font-size: 12px; height: 24px; }
-                    Text { text: "PLAY."; color: #f3f6ff; font-size: 62px; font-weight: 900; height: 68px; }
-                    Text { text: "COMPETE."; color: #ff572b; font-size: 62px; font-weight: 900; height: 68px; }
-                    Text { text: "BELONG."; color: #32c6ec; font-size: 62px; font-weight: 900; height: 68px; }
-                    Rectangle { width: 54px; height: 3px; background: #ff572b; }
-                    Text { text: "Great games. Good company.\nA place to make your next move."; color: #8da3bf; font-size: 16px; height: 55px; }
+                    Text { text: "THIS IS YOUR ARENA."; color: Theme.cyan; font-size: 12px; height: 24px; }
+                    Text { text: "Play."; color: Theme.text; font-size: 62px; font-weight: 900; height: 68px; }
+                    Text { text: "Compete."; color: Theme.accent; font-size: 62px; font-weight: 900; height: 68px; }
+                    Text { text: "Belong."; color: Theme.cyan; font-size: 62px; font-weight: 900; height: 68px; }
+                    Rectangle { width: 54px; height: 3px; background: Theme.accent; }
+                    Text { text: "Great games. Good company.\nA place to make your next move."; color: Theme.muted; font-size: 16px; height: 55px; }
                     Rectangle { height: 24px; background: transparent; }
-                    Rectangle { width: 225px; height: 74px; background: #0d1a2a; border-width: 1px; border-color: #263d55; border-radius: 6px;
+                    Rectangle { width: 225px; height: 74px; background: Theme.surface; border-width: 1px; border-color: Theme.border; border-radius: 10px;
                         VerticalLayout { padding: 14px; spacing: 5px;
-                            Text { text: "YOUR STATION"; color: #8da3bf; font-size: 10px; }
-                            Text { text: "PC-01"; color: #f3f6ff; font-size: 24px; font-weight: 700; }
+                            Text { text: "YOUR GAMING SPACE"; color: Theme.muted; font-size: 10px; }
+                            Text { text: "Make it yours."; color: Theme.text; font-size: 24px; font-weight: 700; }
                         }
                     }
                 }
@@ -51,8 +52,8 @@ export component LoginScreen inherits Rectangle {
             LoginPanel { width: 490px; height: 630px; busy: root.busy; authenticated: root.authenticated; connection-problem: root.connection-problem; status-text: root.status-text; message: root.message; password <=> root.password; login-requested(u, p, r) => { root.login-requested(u, p, r); } }
         }
         HorizontalLayout { y: parent.height - 24px; width: parent.width; height: 24px;
-            Text { text: "ESPORTS   /   COMMUNITY   /   PREMIUM EXPERIENCE"; color: #607793; font-size: 10px; }
-            Text { text: "Client Agent v0.1.0"; color: #607793; font-size: 11px; horizontal-alignment: right; }
+            Text { text: "ESPORTS   /   COMMUNITY   /   PREMIUM EXPERIENCE"; color: Theme.subtle; font-size: 10px; }
+            Text { text: "Client Agent v0.1.0"; color: Theme.subtle; font-size: 11px; horizontal-alignment: right; }
         }
     }
 }

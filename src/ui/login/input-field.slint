@@ -1,3 +1,4 @@
+import { Theme } from "../shared/design.slint";
 import { LineEdit } from "std-widgets.slint";
 export component InputField inherits Rectangle {
     in property <string> label;
@@ -11,7 +12,7 @@ export component InputField inherits Rectangle {
     background: transparent;
     VerticalLayout {
         spacing: 9px;
-        Text { text: root.label; color: #a2b4ce; font-size: 12px; font-weight: 600; height: 18px; }
+        Text { text: root.label; color: Theme.muted; font-size: 12px; font-weight: 600; height: 18px; }
         editor := LineEdit {
             text <=> root.value;
             placeholder-text: root.placeholder;

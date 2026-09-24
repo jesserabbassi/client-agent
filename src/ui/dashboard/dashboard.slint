@@ -1,60 +1,83 @@
-import { Button, ComboBox } from "std-widgets.slint";
+import { ComboBox } from "std-widgets.slint";
 import { Activity } from "../shared/activity.slint";
+import { Theme, Panel, Eyebrow, ActionButton } from "../shared/design.slint";
 export component Dashboard inherits Rectangle {
     in property <string> player-name;
     callback games();
     callback wallet();
-    background: #00121d;
-    min-height: 720px;
-    VerticalLayout { padding: 26px; spacing: 18px;
-        Text { text: "Welcome back, " + root.player-name + "!"; color: white; font-size: 30px; font-weight: 700; height: 42px; }
-        Text { text: "Reserve your spot. Start playing. Make it your session."; color: #9fb8c9; height: 25px; }
+    background: Theme.background;
+    min-height: 730px;
+    VerticalLayout { width: min(root.width, 1320px); x: (root.width - self.width) / 2; alignment: start; padding: 32px; spacing: 18px;
+        Eyebrow { text: "GOOD TO HAVE YOU HERE"; color: Theme.accent; }
+        Text { text: "Welcome back, " + root.player-name + "."; color: Theme.text; font-size: 32px; font-weight: 700; height: 42px; }
+        Text { text: "A little less waiting. A lot more playing."; color: Theme.muted; font-size: 14px; height: 24px; }
         HorizontalLayout { spacing: 18px; height: 300px;
-            Rectangle { background: @linear-gradient(120deg, #753511, #102031); border-radius: 8px;
-                VerticalLayout { padding: 22px; spacing: 12px;
-                    Text { text: "YOUR SESSION"; color: #ffaa36; }
-                    Text { text: Activity.session-label; color: white; font-size: 20px; wrap: word-wrap; }
-                    Text { text: Activity.selected-game == "" ? "Choose a game after starting your session" : "Game: " + Activity.selected-game; color: #9fb8c9; wrap: word-wrap; }
-                    if Activity.session-active: Button { text: "Choose / change game →"; clicked => { root.games(); } }
-                    if !Activity.session-active: VerticalLayout { spacing: 10px;
-                        Text { text: "Play now · No reservation needed"; color: #ffaa36; }
-                        quick-duration := ComboBox { model: ["1 hour · 6.00 €", "2 hours · 12.00 €", "3 hours · 18.00 €"]; }
-                        Button { text: "Start a session →"; primary: true; height: 52px; clicked => { Activity.start-session(quick-duration.current-index + 1); } }
-                        Text { text: "Charged now · No refund for early finish"; color: #9fb8c9; font-size: 12px; wrap: word-wrap; }
+            Panel { horizontal-stretch: 3; background: #1c2633; border-color: #42404a;
+                Rectangle { x: 24px; y: 0px; width: 52px; height: 3px; background: Theme.accent; }
+                VerticalLayout { padding: 24px; spacing: 12px;
+                    HorizontalLayout { height: 20px;
+                        Eyebrow { text: "YOUR SESSION"; color: Theme.accent; }
+                        Text { text: Activity.session-active ? "●  IN PROGRESS" : "READY WHEN YOU ARE"; color: Activity.session-active ? Theme.cyan : Theme.muted; font-size: 9px; horizontal-alignment: right; }
                     }
-                    if Activity.session-active: Button { text: "End session"; height: 48px; clicked => { Activity.end(); } }
+                    Text { text: Activity.session-active ? Activity.session-label : "Your next session starts here."; color: Theme.text; font-size: 22px; font-weight: 600; wrap: word-wrap; }
+                    Text { text: Activity.selected-game == "" ? "Pick your time. Settle in. Find your game." : "Now selected  /  " + Activity.selected-game; color: Theme.muted; font-size: 13px; wrap: word-wrap; }
+                    if !Activity.session-active: VerticalLayout { spacing: 10px;
+                        quick-duration := ComboBox { model: ["1 hour · 6.00 €", "2 hours · 12.00 €", "3 hours · 18.00 €"]; height: 40px; }
+                        ActionButton { text: "Start a session  →"; primary: true; height: 46px; clicked => { Activity.start-session(quick-duration.current-index + 1); } }
+                        Text { text: "No reservation needed. Charged now; early finishes are not refunded."; color: Theme.subtle; font-size: 10px; wrap: word-wrap; }
+                    }
+                    if Activity.session-active: ActionButton { text: "Choose your game  →"; primary: true; clicked => { root.games(); } }
+                    if Activity.session-active: ActionButton { text: "End session"; clicked => { Activity.end(); } }
                 }
             }
-            Rectangle { background: #092333; border-radius: 8px;
-                VerticalLayout { padding: 22px; spacing: 12px;
-                    Text { text: "WALLET BALANCE"; color: #9fb8c9; }
-                    Text { text: Activity.balance; color: white; font-size: 30px; font-weight: 700; }
-                    Button { text: "Wallet & transactions →"; clicked => { root.wallet(); } }
+            Panel { horizontal-stretch: 2;
+                VerticalLayout { padding: 24px; spacing: 12px;
+                    Eyebrow { text: "YOUR PLAYTIME, FUNDED"; }
+                    Text { text: Activity.balance; color: Theme.text; font-size: 38px; font-weight: 700; height: 54px; }
+                    Text { text: "Available wallet balance"; color: Theme.muted; font-size: 12px; }
+                    Rectangle { height: 1px; background: Theme.border; }
+                    Text { text: "6.00 € / hour"; color: Theme.cyan; font-size: 16px; font-weight: 600; }
+                    Text { text: "One simple rate. Your choice of game."; color: Theme.subtle; font-size: 11px; wrap: word-wrap; }
+                    ActionButton { text: "Manage wallet  ↗"; clicked => { root.wallet(); } }
                 }
             }
         }
-        Rectangle { background: #041b28; border-radius: 8px; height: 180px;
+        Panel { height: 174px;
             VerticalLayout { padding: 22px; spacing: 12px;
-                Text { text: "Make a reservation"; color: white; font-size: 22px; }
-                Text { text: "Next available · 6.00 € / hour · Charged when you start · No refund for early finish"; color: #9fb8c9; wrap: word-wrap; }
+                HorizontalLayout { height: 26px;
+                    Text { text: "Save your spot"; color: Theme.text; font-size: 20px; font-weight: 600; }
+                    Eyebrow { text: "NEXT AVAILABLE SESSION"; horizontal-alignment: right; }
+                }
+                Text { text: "Choose a station and duration. Your wallet is charged when you start."; color: Theme.muted; font-size: 12px; wrap: word-wrap; }
                 HorizontalLayout { spacing: 12px;
                     station := ComboBox { model: ["Station 01", "Station 02", "Station 03", "Station 04"]; }
                     duration := ComboBox { model: ["1 hour · 6.00 €", "2 hours · 12.00 €", "3 hours · 18.00 €"]; }
-                    Button { text: "Reserve station"; primary: true; clicked => { Activity.reserve(station.current-index, duration.current-index + 1); } }
+                    ActionButton { text: "Reserve station  +"; width: 170px; clicked => { Activity.reserve(station.current-index, duration.current-index + 1); } }
                 }
             }
         }
-        Text { text: Activity.message; color: #54cced; wrap: word-wrap; min-height: 30px; }
-        Text { text: "Your reservations"; color: white; font-size: 22px; height: 32px; }
-        if Activity.reservations.length == 0: Text { text: "No reservations yet. Choose a station above to get started."; color: #9fb8c9; height: 65px; }
-        for row in Activity.reservations: Rectangle { height: 68px; background: #082332; border-radius: 6px;
-            HorizontalLayout { padding: 14px; spacing: 12px;
-                Text { text: row.station; color: white; vertical-alignment: center; }
-                Text { text: row.duration + " · " + row.price; color: #9fb8c9; vertical-alignment: center; }
-                Text { text: row.status; color: #ffaa36; vertical-alignment: center; }
-                Button { text: "Start session"; enabled: row.status == "Reserved" && !Activity.session-active; clicked => { Activity.start(row.id); } }
+        if Activity.message != "": Text { text: Activity.message; color: Theme.cyan; wrap: word-wrap; min-height: 28px; vertical-stretch: 0; font-size: 12px; }
+        HorizontalLayout { height: 28px;
+            Text { text: "Your reservations"; color: Theme.text; font-size: 20px; font-weight: 600; }
+            Eyebrow { text: "YOUR NEXT MOVE"; horizontal-alignment: right; }
+        }
+        if Activity.reservations.length == 0: Panel { height: 90px;
+            HorizontalLayout { padding: 22px; spacing: 18px;
+                Text { text: "+"; color: Theme.accent; font-size: 28px; width: 32px; vertical-alignment: center; }
+                VerticalLayout { spacing: 5px;
+                    Text { text: "A seat with your name on it."; color: Theme.text; font-size: 13px; }
+                    Text { text: "Choose a station above to make your first reservation."; color: Theme.subtle; font-size: 12px; }
+                }
             }
         }
-        Text { text: "Demo workspace · Reservations and wallet are kept until the app closes."; color: #7390a4; height: 26px; }
+        for row in Activity.reservations: Panel { height: 70px;
+            HorizontalLayout { padding: 14px; spacing: 12px;
+                Text { text: row.station; color: Theme.text; font-weight: 600; vertical-alignment: center; }
+                Text { text: row.duration + " · " + row.price; color: Theme.muted; font-size: 12px; vertical-alignment: center; }
+                Text { text: row.status; color: row.status == "Reserved" ? Theme.accent : Theme.subtle; font-size: 11px; vertical-alignment: center; }
+                ActionButton { text: "Start session"; width: 135px; enabled: row.status == "Reserved" && !Activity.session-active; clicked => { Activity.start(row.id); } }
+            }
+        }
+        Text { text: "Demo workspace · Session and wallet activity resets when the app closes."; color: Theme.subtle; font-size: 10px; height: 24px; }
     }
 }

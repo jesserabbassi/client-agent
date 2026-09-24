@@ -1,50 +1,92 @@
 import { Button, ScrollView } from "std-widgets.slint";
+import { Theme, ActionButton, Eyebrow } from "shared/design.slint";
+import { Activity } from "shared/activity.slint";
 import { Dashboard } from "dashboard/dashboard.slint";
 import { Games } from "games/games.slint";
 import { Wallet } from "wallet/wallet.slint";
 export enum Page { dashboard, games, wallet }
+
+component NavItem inherits Rectangle {
+    in property <string> label;
+    in property <string> number;
+    in property <bool> selected;
+    callback clicked();
+    height: 52px; border-radius: 8px;
+    background: root.selected ? #25303d : transparent;
+    border-width: root.selected || button.has-focus ? 1px : 0px;
+    border-color: button.has-focus ? Theme.cyan : #3c4b5b;
+    if root.selected: Rectangle { x: 0px; y: 16px; width: 3px; height: 20px; background: Theme.accent; border-radius: 2px; }
+    HorizontalLayout { padding-left: 17px; padding-right: 16px; spacing: 14px;
+        Text { text: root.number; color: root.selected ? Theme.accent : Theme.subtle; font-size: 11px; width: 22px; vertical-alignment: center; }
+        Text { text: root.label; color: root.selected ? Theme.text : Theme.muted; font-weight: root.selected ? 600 : 400; font-size: 14px; vertical-alignment: center; }
+        if root.selected: Text { text: "›"; color: Theme.accent; width: 10px; vertical-alignment: center; }
+    }
+    button := Button { width: parent.width; height: parent.height; text: root.label; opacity: 0; clicked => { root.clicked(); } }
+    forward-focus: button;
+}
+
 export component AppShell inherits Rectangle {
     in property <string> player-name;
     in property <Page> page;
     callback navigate(Page);
     callback logout();
-    background: #00121d;
-    VerticalLayout { spacing: 0px;
-        Rectangle { height: 78px; background: #031520;
-            HorizontalLayout { padding: 22px; spacing: 24px;
-                Text { text: "NINETY"; color: white; font-size: 29px; font-weight: 900; vertical-alignment: center; }
-                Text { text: "GAMING HOUSE"; color: #91acbf; font-size: 11px; vertical-alignment: center; }
-                Text { text: "●  DEMO"; color: #00dab0; vertical-alignment: center; horizontal-alignment: right; }
-                Text { text: root.player-name; color: white; vertical-alignment: center; horizontal-stretch: 0; }
-                Button { text: "Log out"; width: 95px; clicked => { root.logout(); } }
+    background: Theme.background;
+    HorizontalLayout { spacing: 0px;
+        Rectangle { width: 220px; background: #0f1723; border-width: 1px; border-color: #202c3c;
+            VerticalLayout { padding-left: 18px; padding-right: 18px; padding-top: 30px; padding-bottom: 22px; spacing: 10px;
+                HorizontalLayout { height: 48px; spacing: 12px;
+                    Rectangle { width: 38px; height: 38px; background: Theme.accent; border-radius: 10px;
+                        Text { text: "N"; color: #20160f; font-size: 25px; font-weight: 900; horizontal-alignment: center; vertical-alignment: center; }
+                    }
+                    VerticalLayout { spacing: 1px;
+                        Text { text: "NINETY"; color: Theme.text; font-size: 21px; font-weight: 800; }
+                        Text { text: "G A M I N G   H O U S E"; color: Theme.subtle; font-size: 8px; }
+                    }
+                }
+                Rectangle { height: 28px; background: transparent; }
+                Eyebrow { text: "YOUR SPACE"; }
+                for item in [
+                    { label: "Overview", number: "01", page: Page.dashboard },
+                    { label: "Games library", number: "02", page: Page.games },
+                    { label: "Wallet", number: "03", page: Page.wallet }
+                ]: NavItem { label: item.label; number: item.number; selected: root.page == item.page; clicked => { root.navigate(item.page); } }
+                Rectangle { vertical-stretch: 1; background: transparent; }
+                Rectangle { height: 140px; border-radius: 10px; background: #1a2c2b; border-width: 1px; border-color: #30483e;
+                    VerticalLayout { padding: 17px; spacing: 8px;
+                        Eyebrow { text: "MAKE YOURSELF AT HOME"; color: Theme.cyan; font-size: 9px; }
+                        Text { text: "More than\na game."; color: Theme.text; font-size: 23px; font-weight: 700; }
+                        Text { text: "Your place. Your people."; color: Theme.muted; font-size: 11px; }
+                    }
+                }
+                Rectangle { height: 16px; background: transparent; }
+                Eyebrow { text: "NINETY  /  CLIENT 0.1.0"; font-size: 9px; }
             }
         }
-        HorizontalLayout { spacing: 0px;
-            Rectangle { width: 205px; background: @linear-gradient(150deg, #092130, #00101b);
-                VerticalLayout { padding-top: 22px; padding-bottom: 30px; padding-left: 12px; padding-right: 12px; spacing: 12px;
-                    for item in [
-                        { label: "Dashboard", page: Page.dashboard },
-                        { label: "Games", page: Page.games },
-                        { label: "Wallet", page: Page.wallet }
-                    ]: Button {
-                        height: 60px;
-                        horizontal-stretch: 1;
-                        text: item.label;
-                        primary: root.page == item.page;
-                        clicked => { root.navigate(item.page); }
+        VerticalLayout { spacing: 0px;
+            Rectangle { height: 80px; background: Theme.background;
+                HorizontalLayout { padding-left: 32px; padding-right: 32px; padding-top: 18px; padding-bottom: 18px; spacing: 16px;
+                    Text { text: "WORKSPACE   /   " + (root.page == Page.dashboard ? "OVERVIEW" : root.page == Page.games ? "GAMES LIBRARY" : "WALLET"); color: Theme.subtle; font-size: 10px; vertical-alignment: center; }
+                    Rectangle { horizontal-stretch: 1; background: transparent; }
+                    Rectangle { width: 110px; height: 29px; border-radius: 15px; background: #23302d;
+                        Text { text: "DEMO SPACE"; color: Theme.cyan; font-size: 9px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
                     }
-                    Rectangle { vertical-stretch: 1; background: transparent; }
-                    Text { text: "MORE\nTHAN A\nGAME"; color: white; font-size: 22px; height: 95px; horizontal-alignment: center; }
+                    Rectangle { width: 1px; background: Theme.border; }
+                    Text { text: root.player-name; color: Theme.text; font-size: 13px; horizontal-stretch: 0; vertical-alignment: center; }
+                    ActionButton { text: "Log out"; width: 100px; clicked => { root.logout(); } }
                 }
+                Rectangle { y: parent.height - 1px; height: 1px; width: parent.width; background: #202b3b; }
             }
             ScrollView { viewport-width: self.width;
                 if root.page == Page.dashboard: Dashboard { player-name: root.player-name; games => { root.navigate(Page.games); } wallet => { root.navigate(Page.wallet); } }
                 if root.page == Page.games: Games {}
                 if root.page == Page.wallet: Wallet {}
             }
-        }
-        Rectangle { height: 36px; background: #02101a;
-            Text { x: 25px; text: "NINETY GAMING HOUSE   |   ESPORTS   |   COMMUNITY   |   PREMIUM EXPERIENCE"; color: #7390a4; font-size: 9px; vertical-alignment: center; }
+            Rectangle { height: 32px; background: Theme.background;
+                HorizontalLayout { padding-left: 32px; padding-right: 32px;
+                    Text { text: "BUILT FOR YOUR NEXT GREAT SESSION"; color: Theme.subtle; font-size: 8px; vertical-alignment: center; }
+                    Text { text: Activity.session-active ? "SESSION IN PROGRESS" : "TAKE A SEAT. MAKE YOUR PLAY."; color: Activity.session-active ? Theme.cyan : Theme.subtle; font-size: 8px; horizontal-alignment: right; vertical-alignment: center; }
+                }
+            }
         }
     }
 }

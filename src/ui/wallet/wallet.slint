@@ -1,36 +1,58 @@
-import { Button, LineEdit } from "std-widgets.slint";
+import { LineEdit } from "std-widgets.slint";
 import { Activity } from "../shared/activity.slint";
+import { Theme, Panel, Eyebrow, ActionButton } from "../shared/design.slint";
 export component Wallet inherits Rectangle {
-    background: #00121d;
+    background: Theme.background;
     min-height: 690px;
-    VerticalLayout { padding: 26px; spacing: 20px;
-        Text { text: "Wallet"; color: white; font-size: 30px; font-weight: 700; height: 42px; }
-        Text { text: "Your funds, your playtime. All transactions in one place."; color: #9fb8c9; height: 25px; }
-        Rectangle { height: 140px; background: @linear-gradient(120deg, #66378a, #051925); border-radius: 8px;
-            VerticalLayout { padding: 24px; spacing: 12px;
-                Text { text: "AVAILABLE BALANCE"; color: #c1d5e2; }
-                Text { text: Activity.balance; color: white; font-size: 38px; font-weight: 700; }
+    VerticalLayout { width: min(root.width, 1320px); x: (root.width - self.width) / 2; alignment: start; padding: 32px; spacing: 18px;
+        Eyebrow { text: "LESS FRICTION. MORE PLAYTIME."; color: Theme.accent; }
+        Text { text: "Your wallet."; color: Theme.text; font-size: 32px; font-weight: 700; height: 42px; }
+        Text { text: "Keep your next session within reach."; color: Theme.muted; font-size: 14px; height: 24px; }
+        HorizontalLayout { height: 250px; spacing: 18px;
+            Panel { background: #1c3235; border-color: #3b5553;
+                VerticalLayout { padding: 26px; spacing: 12px;
+                    Eyebrow { text: "AVAILABLE BALANCE"; color: Theme.cyan; }
+                    Text { text: Activity.balance; color: Theme.text; font-size: 44px; font-weight: 700; height: 65px; }
+                    Rectangle { height: 1px; background: #39514f; }
+                    Text { text: "Ready for your next session."; color: Theme.muted; font-size: 12px; }
+                    Text { text: "NINETY  /  PLAYER WALLET"; color: Theme.cyan; font-size: 9px; height: 20px; }
+                }
             }
-        }
-        Rectangle { height: 180px; background: #041b28; border-radius: 8px;
-            VerticalLayout { padding: 22px; spacing: 12px;
-                Text { text: "Add money"; color: white; font-size: 22px; }
-                Text { text: "Demo top-up · No payment is taken · Enter 1.00–500.00 €"; color: #9fb8c9; }
-                HorizontalLayout { spacing: 12px;
-                    amount := LineEdit { placeholder-text: "Amount in EUR, e.g. 20.00"; accepted => { Activity.top-up(self.text); } }
-                    Button { text: "Add demo funds"; primary: true; clicked => { Activity.top-up(amount.text); } }
+            Panel {
+                VerticalLayout { padding: 24px; spacing: 12px;
+                    Text { text: "Top up & get going"; color: Theme.text; font-size: 20px; font-weight: 600; }
+                    Text { text: "Enter an amount between 1.00 and 500.00 €."; color: Theme.muted; font-size: 12px; wrap: word-wrap; }
+                    amount := LineEdit { placeholder-text: "Amount in EUR · e.g. 20.00"; height: 42px; accepted => { Activity.top-up(self.text); } }
+                    ActionButton { text: "Add demo funds  +"; primary: true; height: 44px; clicked => { Activity.top-up(amount.text); } }
+                    Text { text: "Demo funds only. No payment is taken."; color: Theme.subtle; font-size: 10px; }
                 }
             }
         }
-        Text { text: Activity.message; color: #54cced; wrap: word-wrap; min-height: 30px; }
-        Text { text: "Transaction history"; color: white; font-size: 23px; height: 35px; }
-        if Activity.transactions.length == 0: Text { text: "No transactions yet. Add demo funds to start playing."; color: #9fb8c9; height: 50px; }
-        for row in Activity.transactions: Rectangle { height: 58px; background: #082332; border-radius: 4px;
-            HorizontalLayout { padding: 16px; spacing: 12px;
-                Text { text: row.reference; color: #7395ac; vertical-alignment: center; }
-                Text { text: row.description; color: white; vertical-alignment: center; }
-                Text { text: row.amount; color: #54cced; horizontal-alignment: right; vertical-alignment: center; }
+        if Activity.message != "": Text { text: Activity.message; color: Theme.cyan; font-size: 12px; wrap: word-wrap; min-height: 28px; vertical-stretch: 0; }
+        HorizontalLayout { height: 36px;
+            Text { text: "Recent activity"; color: Theme.text; font-size: 20px; font-weight: 600; vertical-alignment: center; }
+            Eyebrow { text: "ALL TRANSACTIONS"; horizontal-alignment: right; }
+        }
+        Panel { height: 34px; background: #101823;
+            HorizontalLayout { padding-left: 18px; padding-right: 18px;
+                Eyebrow { text: "REFERENCE"; width: 105px; }
+                Eyebrow { text: "DESCRIPTION"; }
+                Eyebrow { text: "AMOUNT"; width: 100px; horizontal-alignment: right; }
             }
         }
+        if Activity.transactions.length == 0: Panel { height: 125px;
+            VerticalLayout { padding: 26px; spacing: 10px; alignment: center;
+                Text { text: "A fresh start."; color: Theme.text; font-size: 18px; font-weight: 600; horizontal-alignment: center; }
+                Text { text: "Your top-ups and session charges will appear here."; color: Theme.muted; font-size: 12px; horizontal-alignment: center; }
+            }
+        }
+        for row in Activity.transactions: Panel { height: 64px;
+            HorizontalLayout { padding: 18px; spacing: 12px;
+                Text { text: row.reference; color: Theme.subtle; font-size: 11px; width: 93px; vertical-alignment: center; }
+                Text { text: row.description; color: Theme.text; font-size: 13px; vertical-alignment: center; wrap: word-wrap; }
+                Text { text: row.amount; color: Theme.cyan; font-size: 15px; font-weight: 600; width: 100px; horizontal-alignment: right; vertical-alignment: center; }
+            }
+        }
+        Text { text: "Demo balance and transaction history reset when the app closes."; color: Theme.subtle; font-size: 10px; height: 24px; }
     }
 }

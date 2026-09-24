@@ -1,5 +1,5 @@
 use crate::{
-    communication::server_client::DevelopmentServerClient,
+    communication::auth_client::DevelopmentServerClient,
     models::auth::{AuthError, AuthState, LoginRequest},
     services::login_service::LoginService,
     ui::ClientView,

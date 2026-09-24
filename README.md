@@ -40,12 +40,23 @@ src/
     mod.rs
   services/
     login_service.rs     Credential validation and transport delegation
+    monitoring_service.rs Coordinates hardware, peripheral and network monitors
+    monitoring_runtime.rs Background worker lifecycle
+    hardware_monitor/    CPU, RAM, GPU, processes and platform providers
+    peripheral_monitor.rs Input device connection changes
+    network_monitor.rs   Hub connectivity and latency
     mod.rs
+  infrastructure/
+    telemetry_sender.rs  Latest-value queue, periodic send and reconnect policy
+    telemetry_config.rs  .env and deployment configuration
   communication/
-    server_client.rs     Authentication transport and development mock
+    auth_client.rs       Authentication transport and development mock
+    server_client.rs     SignalR negotiation, WebSocket transport and JSON framing
     mod.rs
   models/
     auth.rs              Authentication data and states
+    telemetry.rs         Telemetry data contract
+    peripheral_status.rs Peripheral connection model
     mod.rs
   repositories/
     mod.rs               Layer reserved for future backend data access
@@ -71,7 +82,15 @@ NINETY_MOCK_MODE=unavailable cargo test
 NINETY_MOCK_MODE=network-error cargo test
 ```
 
-No real backend, game launcher, or payment integration is included. Windows runtime validation remains pending.
+Client-side SignalR telemetry is implemented; its production backend is not included. Game launching and payments remain demo-only. Windows runtime validation remains pending.
+
+## Hardware monitoring and telemetry
+
+The monitoring module follows the supplied service/infrastructure/model architecture: `MonitoringService` coordinates `HardwareMonitor`, `PeripheralMonitor` and `NetworkMonitor`; `TelemetrySender` queues and sends through the SignalR `ServerClient`.
+
+The hub URL and settings live in `.env` (tracked template: `.env.example`). The local placeholder is `http://localhost:5000/hubs/telemetry`, with `NINETY_TELEMETRY_ENABLED=false` while the backend is not ready. Set the real URL, a unique `NINETY_AGENT_ID`, the machine credential and `NINETY_TELEMETRY_ENABLED=true` when connecting a backend. Collection and communication run on separate background threads, independently of Slint and player login.
+
+See [telemetry architecture, configuration, data contract and tests](docs/telemetry.md) for supported GPU metrics, app/peripheral collection, reconnect behavior and offline presence semantics.
 
 
 ## OTP verification

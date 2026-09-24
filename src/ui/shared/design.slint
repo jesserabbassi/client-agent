@@ -1,0 +1,54 @@
+import { Button } from "std-widgets.slint";
+
+export global Theme {
+    out property <color> background: #0b1019;
+    out property <color> surface: #121b28;
+    out property <color> elevated: #192536;
+    out property <color> border: #263347;
+    out property <color> text: #f1f5fc;
+    out property <color> muted: #a1aec2;
+    out property <color> subtle: #788ba6;
+    out property <color> accent: #ff8055;
+    out property <color> cyan: #80dfd2;
+}
+
+export component ActionButton inherits Rectangle {
+    in property <string> text;
+    in property <bool> primary: false;
+    in property <bool> enabled: true;
+    callback clicked();
+    forward-focus: action;
+    min-height: 42px;
+    min-width: 100px;
+    border-radius: 8px;
+    border-width: action.has-focus ? 2px : 1px;
+    border-color: action.has-focus ? Theme.cyan : root.primary ? Theme.accent : Theme.border;
+    background: !root.enabled ? #18202c : action.pressed ? #334256 : root.primary ? Theme.accent : Theme.elevated;
+    animate background { duration: 120ms; }
+    action := Button {
+        width: parent.width; height: parent.height;
+        text: root.text; enabled: root.enabled; opacity: 0;
+        clicked => { root.clicked(); }
+    }
+    Text {
+        text: root.text;
+        color: !root.enabled ? Theme.subtle : root.primary ? #1c1412 : Theme.text;
+        font-size: 13px; font-weight: 600;
+        horizontal-alignment: center; vertical-alignment: center;
+    }
+}
+
+export component Panel inherits Rectangle {
+    background: Theme.surface;
+    border-width: 1px;
+    border-color: Theme.border;
+    border-radius: 12px;
+    @children
+}
+
+export component Eyebrow inherits Text {
+    color: Theme.subtle;
+    font-size: 10px;
+    font-weight: 600;
+    height: 18px;
+}

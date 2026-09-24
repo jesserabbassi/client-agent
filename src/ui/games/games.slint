@@ -1,46 +1,57 @@
-import { Button } from "std-widgets.slint";
 import { Activity } from "../shared/activity.slint";
+import { Theme, Panel, Eyebrow, ActionButton } from "../shared/design.slint";
 export component Games inherits Rectangle {
     private property <string> category: "All Games";
-    background: #00121d;
-    min-height: 720px;
-    VerticalLayout { padding: 26px; spacing: 20px;
-        Text { text: Activity.session-active ? "Choose your game" : "Games Library"; color: white; font-size: 30px; font-weight: 700; height: 42px; }
-        Text { text: Activity.session-active ? Activity.session-label + " · Select a game below" : "Start a session from your dashboard to choose a game."; color: #9fb8c9; height: 25px; }
-        HorizontalLayout { spacing: 10px; height: 44px;
-            for label in ["All Games", "FPS", "MOBA", "Sports", "Racing"]: Button {
-                text: label; primary: root.category == label; clicked => { root.category = label; }
+    background: Theme.background;
+    min-height: 850px;
+    VerticalLayout { width: min(root.width, 1320px); x: (root.width - self.width) / 2; alignment: start; padding: 32px; spacing: 18px;
+        Eyebrow { text: "FIND YOUR NEXT OBSESSION"; color: Theme.accent; }
+        Text { text: "The games library."; color: Theme.text; font-size: 32px; font-weight: 700; height: 42px; }
+        Text { text: Activity.session-active ? Activity.session-label + " · Choose a game to make it yours." : "From the first round to the final whistle. Start a session to choose a game."; color: Theme.muted; font-size: 13px; wrap: word-wrap; height: 32px; }
+        HorizontalLayout { spacing: 8px; height: 40px;
+            for label in ["All Games", "FPS", "MOBA", "Sports", "Racing"]: ActionButton {
+                text: label; primary: root.category == label; min-width: 85px; clicked => { root.category = label; }
             }
+            Rectangle { horizontal-stretch: 1; background: transparent; }
         }
-        VerticalLayout { spacing: 12px;
+        VerticalLayout { spacing: 16px;
             for row in [
-                [{ name: "Counter-Strike 2", genre: "FPS", mark: "CS2", accent: #be661b }, { name: "Valorant", genre: "FPS", mark: "V", accent: #9b284e }, { name: "League of Legends", genre: "MOBA", mark: "LoL", accent: #276d81 }],
-                [{ name: "Dota 2", genre: "MOBA", mark: "D2", accent: #962d26 }, { name: "EA FC 24", genre: "Sports", mark: "FC", accent: #416851 }, { name: "Rocket League", genre: "Racing", mark: "RL", accent: #245dba }]
-            ]: HorizontalLayout { spacing: 12px; height: 240px;
-                for game in row: Rectangle {
-                    opacity: root.category == "All Games" || root.category == game.genre ? 1 : 0.2;
-                    background: @linear-gradient(125deg, game.accent, #061725); border-width: 1px; border-color: #154257; border-radius: 7px;
-                    VerticalLayout { padding: 20px; spacing: 12px;
-                        Text { text: game.mark; color: #ffffff; font-size: 48px; font-weight: 900; }
-                        Text { text: game.name; color: white; font-size: 17px; font-weight: 600; wrap: word-wrap; }
-                        Button {
-                            text: Activity.selected-game == game.name ? "Selected ✓" : "Choose game";
-                            height: 44px;
+                [{ name: "Counter-Strike 2", genre: "FPS", mark: "CS / 2", subtitle: "EVERY ROUND COUNTS", accent: #bf8950 }, { name: "Valorant", genre: "FPS", mark: "V /", subtitle: "DEFY THE LIMITS", accent: #d76078 }, { name: "League of Legends", genre: "MOBA", mark: "L / L", subtitle: "OWN THE RIFT", accent: #4ea9b0 }],
+                [{ name: "Dota 2", genre: "MOBA", mark: "D / 2", subtitle: "MAKE YOUR LEGEND", accent: #bd6553 }, { name: "EA FC 24", genre: "Sports", mark: "FC /", subtitle: "FOR THE LOVE OF FOOTBALL", accent: #80a676 }, { name: "Rocket League", genre: "Racing", mark: "R / L", subtitle: "TAKE TO THE SKY", accent: #729ee6 }]
+            ]: HorizontalLayout { spacing: 16px; height: 254px;
+                for game in row: Panel {
+                    opacity: root.category == "All Games" || root.category == game.genre ? 1 : 0.3;
+                    border-color: Activity.selected-game == game.name ? Theme.cyan : Theme.border;
+                    VerticalLayout { padding: 12px; spacing: 10px;
+                        Rectangle { height: 118px; border-radius: 7px; clip: true; background: @linear-gradient(135deg, game.accent.darker(45%), #141d2a);
+                            for i in 5: Rectangle { x: parent.width * 0.52 + i * 19px; y: -12px; width: 1px; height: 155px; background: game.accent; opacity: 0.25; }
+                            Text { x: 16px; y: 18px; text: game.mark; color: #ffffff; font-size: 37px; font-weight: 900; }
+                            Text { x: 16px; y: 89px; text: game.subtitle; color: game.accent.brighter(40%); font-size: 8px; font-weight: 600; }
+                        }
+                        HorizontalLayout { height: 30px; spacing: 4px;
+                            Text { text: game.name; color: Theme.text; font-size: 14px; font-weight: 600; wrap: word-wrap; vertical-alignment: center; }
+                            Text { text: game.genre; color: Theme.subtle; font-size: 9px; horizontal-alignment: right; width: 40px; vertical-alignment: center; }
+                        }
+                        ActionButton {
+                            text: Activity.selected-game == game.name ? "Selected  ✓" : "Choose game  →";
+                            height: 40px;
                             primary: Activity.selected-game == game.name;
                             enabled: Activity.session-active && (root.category == "All Games" || root.category == game.genre);
                             clicked => { Activity.choose-game(game.name); }
                         }
-                        Text { text: game.genre; color: #aee6ff; font-size: 12px; }
                     }
                 }
             }
         }
-        Rectangle { min-height: 140px; background: @linear-gradient(110deg, #301342, #071c2c); border-radius: 7px;
-            VerticalLayout { padding: 20px; spacing: 10px;
-                Text { text: Activity.selected-game == "" ? "Ready to play?" : "Selected: " + Activity.selected-game; color: white; font-size: 23px; }
-                Text { text: Activity.message; color: #a5bac9; wrap: word-wrap; }
-                Text { text: "Demo catalog · Selecting a game does not launch it yet."; color: #a5bac9; }
-                if Activity.session-active: Button { text: "End session"; height: 44px; clicked => { Activity.end(); } }
+        Panel { min-height: 125px; background: #152429; border-color: #2b4447;
+            HorizontalLayout { padding: 22px; spacing: 20px;
+                VerticalLayout { spacing: 9px;
+                    Eyebrow { text: "YOUR LINEUP"; color: Theme.cyan; }
+                    Text { text: Activity.selected-game == "" ? "Good games are better together." : "Up next: " + Activity.selected-game; color: Theme.text; font-size: 19px; font-weight: 600; wrap: word-wrap; }
+                    Text { text: Activity.message; color: Theme.muted; font-size: 12px; wrap: word-wrap; }
+                    Text { text: "Demo catalog · Game launching is not connected yet."; color: Theme.subtle; font-size: 10px; }
+                }
+                if Activity.session-active: ActionButton { text: "End session"; width: 125px; height: 42px; clicked => { Activity.end(); } }
             }
         }
     }
