@@ -1,10 +1,12 @@
 use crate::{
-    communication::server_client::{
+    communication::signalr::server_client::{
         self as signalr, ACK_TIMEOUT, Result, SERVER_TIMEOUT, ServerClient,
     },
     infrastructure::telemetry_config::Config,
-    models::telemetry::{Envelope, Telemetry, now_ms},
-    services::network_monitor::NetworkMonitor,
+    monitoring::{
+        hardware::network_monitor::NetworkMonitor,
+        models::telemetry::{Envelope, Telemetry, now_ms},
+    },
 };
 use serde_json::{Value, json};
 use std::{sync::Arc, time::Duration};
@@ -254,8 +256,10 @@ fn payload(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::services::{
-        monitoring_runtime::TelemetryAgent, monitoring_service::MonitoringService,
+    use crate::monitoring::{
+        hardware::network_monitor::NetworkMonitor,
+        models::{peripheral_status::PeripheralStatus, telemetry::Process},
+        services::{monitoring_runtime::TelemetryAgent, monitoring_service::MonitoringService},
     };
 
     fn test_config(hub: &str) -> Config {
@@ -275,7 +279,7 @@ mod tests {
         let config = test_config("http://localhost/telemetry");
         let mut snapshot = MonitoringService::new(1, NetworkMonitor::new()).collect_telemetry();
         snapshot.hardware.running_processes = (0..512)
-            .map(|pid| crate::models::telemetry::Process {
+            .map(|pid| Process {
                 pid,
                 name: "a".repeat(160),
                 cpu_percent: 1.0,
@@ -298,7 +302,7 @@ mod tests {
         let mut snapshot = MonitoringService::new(0, NetworkMonitor::new()).collect_telemetry();
         snapshot.peripherals = Some(
             (0..256)
-                .map(|i| crate::models::peripheral_status::PeripheralStatus {
+                .map(|i| PeripheralStatus {
                     device_id: format!("{i}-{}", "x".repeat(4096)),
                     device_name: "HID device".into(),
                     device_type: "hid".into(),

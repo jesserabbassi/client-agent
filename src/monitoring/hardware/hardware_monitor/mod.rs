@@ -1,7 +1,7 @@
 mod gpu;
 #[cfg(windows)]
 pub(crate) mod windows;
-use crate::models::telemetry::*;
+use crate::monitoring::models::telemetry::*;
 use gpu::GpuCollector;
 use sysinfo::{Components, ProcessRefreshKind, ProcessesToUpdate, System};
 

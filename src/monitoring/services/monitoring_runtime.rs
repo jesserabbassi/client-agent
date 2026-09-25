@@ -1,8 +1,8 @@
-use super::{monitoring_service::MonitoringService, network_monitor::NetworkMonitor};
-use crate::communication::server_client::Result;
+use super::monitoring_service::MonitoringService;
 use crate::{
+    communication::signalr::server_client::Result,
     infrastructure::{telemetry_config::Config, telemetry_sender::run},
-    models::telemetry::Telemetry,
+    monitoring::{hardware::network_monitor::NetworkMonitor, models::telemetry::Telemetry},
 };
 use std::{
     sync::{Arc, mpsc},

@@ -1,5 +1,5 @@
 //! Native Windows collectors. All handles stay on the collector thread.
-use crate::models::telemetry::Gpu;
+use crate::monitoring::models::telemetry::Gpu;
 use std::collections::{HashMap, HashSet};
 use windows::{
     Win32::{
@@ -226,8 +226,8 @@ impl Drop for WindowsGpus {
 
 /// Enumerate connected keyboard/mouse/HID devices without reading any input.
 pub(crate) fn connected_peripherals()
--> Option<Vec<crate::models::peripheral_status::PeripheralStatus>> {
-    use crate::models::peripheral_status::PeripheralStatus;
+-> Option<Vec<crate::monitoring::models::peripheral_status::PeripheralStatus>> {
+    use crate::monitoring::models::peripheral_status::PeripheralStatus;
     use windows::Win32::UI::Input::*;
     // SAFETY: every API receives a correctly sized, initialized buffer. A device
     // change between size-query and read causes a retry on the next sample.

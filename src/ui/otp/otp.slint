@@ -17,7 +17,7 @@ export component OtpScreen inherits Rectangle {
                     Text { text: "ONE MORE STEP"; color: Theme.accent; font-size: 12px; height: 20px; }
                     Text { text: "You’re almost in."; color: white; font-size: 30px; font-weight: 700; height: 42px; }
                     Text { text: "Enter your six-digit verification code\nto continue to your gaming dashboard."; color: Theme.muted; font-size: 15px; height: 50px; }
-                    Text { text: root.demo ? "DEMO CODE: 123456 · No SMS or email is sent." : "Verification server unavailable."; color: Theme.cyan; font-size: 12px; wrap: word-wrap; height: 35px; }
+                    Text { text: "A verification code was sent to your account."; color: Theme.cyan; font-size: 12px; wrap: word-wrap; height: 35px; }
                     editor := LineEdit { text <=> root.code; placeholder-text: "6-digit code"; enabled: !root.locked; font-size: 24px; height: 55px; accepted => { root.verify(); } }
                     Text { text: root.error; color: #ff9b80; wrap: word-wrap; height: 45px; font-size: 13px; }
                     ActionButton { text: "Verify & continue →"; primary: true; enabled: !root.locked; height: 48px; clicked => { root.verify(); } }

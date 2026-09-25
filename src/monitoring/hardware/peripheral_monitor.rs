@@ -1,4 +1,4 @@
-use crate::models::peripheral_status::PeripheralStatus;
+use crate::monitoring::models::peripheral_status::PeripheralStatus;
 use std::collections::BTreeMap;
 
 pub(crate) struct PeripheralMonitor {

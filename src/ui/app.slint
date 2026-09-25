@@ -25,6 +25,7 @@ export component ClientView inherits Window {
     in property <Page> page: Page.dashboard;
     in property <bool> otp-pending: false;
     in-out property <string> otp-code;
+    in-out property <string> otp-user-id;
     in property <string> otp-error;
     in property <int> otp-attempts: 0;
     callback otp-verify();

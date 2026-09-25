@@ -1,8 +1,10 @@
-use super::{
-    hardware_monitor::HardwareMonitor, network_monitor::NetworkMonitor,
-    peripheral_monitor::PeripheralMonitor,
+use crate::monitoring::{
+    hardware::{
+        hardware_monitor::HardwareMonitor, network_monitor::NetworkMonitor,
+        peripheral_monitor::PeripheralMonitor,
+    },
+    models::telemetry::Telemetry,
 };
-use crate::models::telemetry::Telemetry;
 
 /// Application service from the monitoring architecture. Never performs network IO.
 pub(crate) struct MonitoringService {

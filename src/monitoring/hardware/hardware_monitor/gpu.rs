@@ -1,4 +1,4 @@
-use crate::models::telemetry::Gpu;
+use crate::monitoring::models::telemetry::Gpu;
 use nvml_wrapper::{
     Nvml,
     enum_wrappers::device::{Clock, TemperatureSensor},

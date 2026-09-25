@@ -1,15 +1,16 @@
 use crate::{
-    communication::auth_client::DevelopmentServerClient,
-    models::auth::{AuthError, AuthState, LoginRequest},
-    services::login_service::LoginService,
+    auth::{
+        models::auth::{AuthError, AuthState, LoginRequest},
+        services::{auth_client::ServerAuthClient, login_service::LoginService},
+    },
     ui::ClientView,
 };
 use slint::ComponentHandle;
 use std::sync::Arc;
-pub(crate) fn bind(ui: &ClientView, on_authenticated: fn(&ClientView, String)) {
+pub(crate) fn bind(ui: &ClientView, on_authenticated: fn(&ClientView, String, String)) {
     present(ui, AuthState::Idle, "");
-    ui.set_development_mode(cfg!(feature = "mock-auth"));
-    let service = Arc::new(LoginService::new(DevelopmentServerClient));
+    ui.set_development_mode(false);
+    let service = match ServerAuthClient::from_env() { Ok(client) => Arc::new(LoginService::new(client)), Err(_) => return };
     let weak = ui.as_weak();
     ui.on_login_requested(move |username, password, remember_me| {
         let Some(ui) = weak.upgrade() else { return };
@@ -21,7 +22,7 @@ pub(crate) fn bind(ui: &ClientView, on_authenticated: fn(&ClientView, String)) {
             password: password.into(),
             remember_me,
         };
-        if let Err(message) = LoginService::<DevelopmentServerClient>::validate(&request) {
+        if let Err(message) = LoginService::<ServerAuthClient>::validate(&request) {
             present(&ui, AuthState::Idle, message);
             return;
         }
@@ -36,16 +37,22 @@ pub(crate) fn bind(ui: &ClientView, on_authenticated: fn(&ClientView, String)) {
                 // Window closure while authenticating is safe.
                 let _ = handle.upgrade_in_event_loop(move |ui| match result {
                     Ok(response) => {
-                        let _token = response.access_token;
-                        present(
-                            &ui,
-                            AuthState::OtpRequired,
-                            &format!(
-                                "Welcome, {}. Enter your verification code.",
-                                response.username
-                            ),
-                        );
-                        on_authenticated(&ui, response.username);
+                        let username = response.username;
+                        let user_id = response.user_id;
+                        let requires_otp = response.requires_otp;
+                        let _access_token = response.access_token;
+                        if requires_otp {
+                            present(
+                                &ui,
+                                AuthState::OtpRequired,
+                                &format!("Welcome, {username}. Enter your verification code."),
+                            );
+                            on_authenticated(&ui, username, user_id);
+                        } else {
+                            ui.set_player_name(username.into());
+                            ui.set_authenticated(true);
+                            present(&ui, AuthState::Idle, "Welcome back.");
+                        }
                     }
                     Err(error) => {
                         let (state, message) = error.presentation();
@@ -69,15 +76,14 @@ fn present(ui: &ClientView, state: AuthState, message: &str) {
         matches!(
             state,
             AuthState::ServerUnavailable | AuthState::NetworkError
-        ) || !cfg!(feature = "mock-auth"),
+        ),
     );
     ui.set_status_text(
         match state {
             AuthState::Loading => "Connecting…",
             AuthState::ServerUnavailable => "Server unavailable",
             AuthState::NetworkError => "Connection lost",
-            _ if cfg!(feature = "mock-auth") => "Connected to Ninety Server · MOCK",
-            _ => "Server unavailable · backend not configured",
+            _ => "Connected to Ninety Server",
         }
         .into(),
     );
@@ -97,6 +103,10 @@ impl AuthError {
             Self::NetworkError => (
                 AuthState::NetworkError,
                 "Connection lost. Please try again.",
+            ),
+            Self::InvalidOtp => (
+                AuthState::InvalidCredentials,
+                "Incorrect verification code. Try again.",
             ),
         }
     }

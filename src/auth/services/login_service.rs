@@ -1,6 +1,6 @@
-use crate::{
-    communication::auth_client::AuthClient,
-    models::auth::{AuthError, LoginRequest, LoginResponse},
+use crate::auth::{
+    models::auth::{AuthError, LoginRequest, LoginResponse, OtpRequest},
+    services::auth_client::AuthClient,
 };
 pub(crate) struct LoginService<C: AuthClient> {
     client: C,
@@ -19,26 +19,34 @@ impl<C: AuthClient> LoginService<C> {
         Ok(())
     }
     pub(crate) fn authenticate(&self, request: LoginRequest) -> Result<LoginResponse, AuthError> {
-        // Preference only until secure token storage exists. No credentials persisted.
-        let _remember_me = request.remember_me;
         self.client.authenticate(&request)
     }
+    pub(crate) fn verify_otp(&self, request: OtpRequest) -> Result<LoginResponse, AuthError> { self.client.verify_otp(&request) }
 }
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::Value;
     struct FakeClient;
     impl AuthClient for FakeClient {
         fn authenticate(&self, request: &LoginRequest) -> Result<LoginResponse, AuthError> {
             if request.password == "password" {
                 Ok(LoginResponse {
+                    user_id: "test-user".into(),
                     username: request.username.clone(),
+                    requires_otp: false,
                     access_token: None,
                 })
             } else {
                 Err(AuthError::InvalidCredentials)
             }
         }
+        fn verify_otp(&self, _request: &OtpRequest) -> Result<LoginResponse, AuthError> { Err(AuthError::InvalidOtp) }
+        fn register(&self, _request: &super::super::auth_client::RegisterRequest) -> Result<Value, AuthError> { Ok(Value::Null) }
+        fn refresh(&self, _refresh_token: &str) -> Result<Value, AuthError> { Ok(Value::Null) }
+        fn logout(&self, _access_token: &str) -> Result<(), AuthError> { Ok(()) }
+        fn profile(&self, _access_token: &str) -> Result<Value, AuthError> { Ok(Value::Null) }
+        fn change_password(&self, _access_token: &str, _current: &str, _new: &str) -> Result<Value, AuthError> { Ok(Value::Null) }
     }
     fn request(username: &str, password: &str) -> LoginRequest {
         LoginRequest {

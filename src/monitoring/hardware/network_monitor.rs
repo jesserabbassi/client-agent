@@ -1,4 +1,4 @@
-use crate::models::telemetry::ConnectionStatus;
+use crate::monitoring::models::telemetry::ConnectionStatus;
 use std::{
     sync::{Arc, Mutex},
     time::Duration,
