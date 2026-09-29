@@ -7,7 +7,6 @@ pub(crate) enum ConnectionStatus {
     Online,
     Offline,
 }
-
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Telemetry {
@@ -127,16 +126,4 @@ pub(crate) struct Gpu {
     pub pcie_generation: Option<u32>,
     pub pcie_width: Option<u32>,
     pub performance_state: Option<String>,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct Envelope<'a> {
-    pub schema_version: u8,
-    pub agent_id: &'a str,
-    pub session_id: &'a str,
-    pub sequence: u64,
-    pub sent_at_unix_ms: u64,
-    pub status: &'a str,
-    pub telemetry: Option<&'a Telemetry>,
 }

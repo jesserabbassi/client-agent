@@ -6,6 +6,7 @@ edition = "2024"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
 dotenvy = "0.15"
 futures-util = { version = "0.3", features = ["sink"] }
 nvml-wrapper = "0.11"

@@ -3,8 +3,7 @@ use url::Url;
 
 pub(crate) struct Config {
     pub hub: Url,
-    pub agent_id: String,
-    pub method: String,
+    pub station_id: uuid::Uuid,
     pub interval: Duration,
     pub max_processes: usize,
     token: Option<String>,
@@ -31,7 +30,10 @@ impl Config {
         let values = match dotenvy::from_path_iter(path) {
             Ok(iter) => iter
                 .collect::<std::result::Result<std::collections::HashMap<_, _>, _>>()
-                .map_err(|_| "invalid telemetry .env file")?,
+                .map_err(|e| {
+            let msg = format!("invalid telemetry .env file: {}", e);
+            Box::leak(msg.into_boxed_str()) as &str // Convertit la String en &'static str
+        })?,
             Err(dotenvy::Error::Io(e)) if e.kind() == std::io::ErrorKind::NotFound => {
                 std::collections::HashMap::new()
             }
@@ -66,19 +68,10 @@ impl Config {
                 "hub URL must be HTTPS (HTTP allowed on loopback), with no credentials, query or fragment",
             );
         }
-        let agent_id = get("NINETY_AGENT_ID").ok_or("NINETY_AGENT_ID is required")?;
-        if agent_id.is_empty() || agent_id.len() > 128 || agent_id.chars().any(char::is_control) {
-            return Err("NINETY_AGENT_ID must contain 1..128 bytes without control characters");
-        }
-        let method = get("NINETY_TELEMETRY_METHOD").unwrap_or_else(|| "ReportTelemetry".into());
-        if method.is_empty()
-            || method.len() > 128
-            || !method
-                .chars()
-                .all(|c| c.is_ascii_alphanumeric() || c == '_')
-        {
-            return Err("invalid telemetry hub method name");
-        }
+        let station_id = get("NINETY_STATION_ID")
+            .ok_or("NINETY_STATION_ID is required")?
+            .parse()
+            .map_err(|_| "NINETY_STATION_ID must be a valid UUID")?;
         let number = |key, default, min, max| -> Result<u64, &'static str> {
             let n = get(key)
                 .map(|s| s.parse::<u64>())
@@ -92,8 +85,7 @@ impl Config {
         };
         Ok(Some(Self {
             hub,
-            agent_id,
-            method,
+            station_id,
             interval: Duration::from_millis(number(
                 "NINETY_TELEMETRY_INTERVAL_MS",
                 2000,
@@ -161,7 +153,7 @@ mod tests {
             assert!(
                 Config::read(|key| match key {
                     "NINETY_TELEMETRY_HUB_URL" => Some(url.into()),
-                    "NINETY_AGENT_ID" => Some("pc-1".into()),
+                    "NINETY_STATION_ID" => Some("22222222-2222-2222-2222-222222222222".into()),
                     _ => None,
                 })
                 .is_err()
@@ -171,7 +163,7 @@ mod tests {
             assert!(
                 Config::read(|key| match key {
                     "NINETY_TELEMETRY_HUB_URL" => Some("http://localhost/hub".into()),
-                    "NINETY_AGENT_ID" => Some("pc-1".into()),
+                    "NINETY_STATION_ID" => Some("22222222-2222-2222-2222-222222222222".into()),
                     "NINETY_TELEMETRY_INTERVAL_MS" => Some(interval.into()),
                     _ => None,
                 })
@@ -181,7 +173,7 @@ mod tests {
         assert!(
             Config::read(|key| match key {
                 "NINETY_TELEMETRY_HUB_URL" => Some("https://example.com/hub".into()),
-                "NINETY_AGENT_ID" => Some("pc-1".into()),
+                "NINETY_STATION_ID" => Some("22222222-2222-2222-2222-222222222222".into()),
                 _ => None,
             })
             .unwrap()

@@ -1,6 +1,6 @@
 # Client hardware monitoring
 
-This implements the client side of the supplied **Gaming Client Agent – Hardware Monitoring Module** architecture. The production backend is not implemented or assumed to exist yet. `tests/signalr-fixture/` is a disposable interoperability test fixture only.
+This implements the Rust client side of the NinetyBackend monitoring contract. `tests/signalr-fixture/` is a disposable legacy fixture; the production hub is `NinetyBackend/Infrastructure/SignalR/AgentHub.cs`.
 
 ## Architecture
 
@@ -23,14 +23,14 @@ The local `.env` is already created with telemetry **disabled** and a **placehol
 
 ```dotenv
 NINETY_TELEMETRY_ENABLED=false
-NINETY_TELEMETRY_HUB_URL=http://localhost:5000/hubs/telemetry
-NINETY_AGENT_ID=customer-pc-001
-NINETY_TELEMETRY_METHOD=ReportTelemetry
+NINETY_TELEMETRY_HUB_URL=https://api.example.com/hubs/agents
+NINETY_STATION_ID=00000000-0000-0000-0000-000000000000
 NINETY_TELEMETRY_INTERVAL_MS=2000
 NINETY_TELEMETRY_MAX_PROCESSES=128
+NINETY_TELEMETRY_TOKEN_FILE=C:\\ProgramData\\Ninety\\agent-token
 ```
 
-When the backend is ready, set its actual URL, assign a **unique, stable agent ID per PC**, configure its machine credential, and set `NINETY_TELEMETRY_ENABLED=true`. Restart the application to apply configuration. Setting it to `true` while the server is unavailable exercises automatic reconnect; there is no modal error and the UI remains usable. Telemetry is independent of player login/logout.
+Provision the Agent through the backend, write the returned Agent JWT to the configured token file, set the assigned station ID, and set `NINETY_TELEMETRY_ENABLED=true`. Restart the application to apply configuration. Setting it to `true` while the server is unavailable exercises automatic reconnect; there is no modal error and the UI remains usable. Telemetry is independent of player login/logout.
 
 Configuration comes from `.env` in the working directory, falling back to `.env` beside the executable. `NINETY_ENV_FILE` selects an explicit path. Process environment variables override file values. Parsing does not mutate global environment variables. A Python virtual environment is not needed for this Rust application.
 
@@ -38,34 +38,35 @@ Configuration comes from `.env` in the working directory, falling back to `.env`
 | --- | --- |
 | `NINETY_TELEMETRY_ENABLED` | `.env` sets `false`; if omitted, a configured URL enables telemetry. `true`/`false` or `1`/`0`. |
 | `NINETY_TELEMETRY_HUB_URL` | Required to connect. HTTPS; HTTP allowed only for loopback development. No query, fragment or embedded credentials. |
-| `NINETY_AGENT_ID` | Required when enabled, 1–128 bytes. Provision once per PC; do not share IDs. |
-| `NINETY_TELEMETRY_METHOD` | `ReportTelemetry`; configure the future hub method here. |
+| `NINETY_STATION_ID` | Required when enabled; must be the assigned GamingStation UUID. |
 | `NINETY_TELEMETRY_INTERVAL_MS` | `2000`; allowed range 1000–60000 ms. |
 | `NINETY_TELEMETRY_MAX_PROCESSES` | `128`; range 0–512, applied separately to processes and opened apps. `0` disables both lists. |
-| `NINETY_TELEMETRY_TOKEN` | Optional bearer token sent in HTTP headers for negotiate and WebSocket upgrade. |
-| `NINETY_TELEMETRY_TOKEN_FILE` | Optional, takes precedence over inline token; reread on each reconnect to permit externally managed token rotation. |
+| `NINETY_TELEMETRY_TOKEN` | Optional inline Agent JWT cookie value. |
+| `NINETY_TELEMETRY_TOKEN_FILE` | Optional token file; takes precedence over inline token and is reread on reconnect. |
 
 Tokens are machine credentials, unrelated to mock player authentication. Token issuance/refresh is the responsibility of the future provisioning/backend integration. The client does not disable TLS certificate validation or log credentials, raw remote errors, URLs or telemetry payloads. Logs use `tracing` and stderr; configure `RUST_LOG=ninety_client_agent=info` in the deployment environment. A windowed Windows deployment must arrange a log sink if persistent diagnostics are required.
 
-## Proposed backend contract
+## Backend SignalR contract
 
-The configurable hub method takes **one object**. This is a proposed versioned contract to agree with the backend when it is implemented, not an assertion about an existing API:
+The client connects to `/hubs/agents`, invokes `ConnectAgent(stationId)`, sends `SendTelemetry(TelemetryDto)`, and invokes `Heartbeat()` every 15 seconds:
 
 ```json
 {
-  "schemaVersion": 1,
-  "agentId": "customer-pc-001",
-  "sessionId": "uuid-generated-on-agent-start",
-  "sequence": 1,
-  "sentAtUnixMs": 1800000000000,
-  "status": "online",
-  "telemetry": null
+  "stationId": "00000000-0000-0000-0000-000000000000",
+  "cpuUsage": 0,
+  "gpuUsage": 0,
+  "ramUsage": 0,
+  "cpuTemperature": 0,
+  "gpuTemperature": 0,
+  "fanSpeed": 0,
+  "networkStatus": "Connected",
+  "timestamp": "2026-01-01T00:00:00.000Z"
 }
 ```
 
-`telemetry` is null for startup presence (before the first sample), stale/missing samples, and graceful offline messages. Otherwise it contains the `Telemetry` model, including the diagram's `cpuUsage`, `gpuUsage`, `ramUsage`, `cpuTemperature`, `gpuTemperature`, `fanSpeed`, `networkStatus` and `timestamp`, plus the detailed fields below. Times are UTC Unix milliseconds. `sequence` increases for the lifetime of `sessionId`, including reconnects. The method must return normally so SignalR emits a Completion acknowledgement; it need not return a value. Errors or missing acknowledgements cause reconnect with backoff.
+Unsupported Rust readings are mapped to zero because the backend DTO requires numeric values. Server-side identity comes only from the JWT `agent_id` claim; `stationId` must match the persisted Agent-to-Station assignment. Errors or missing acknowledgements cause reconnect with backoff.
 
-The future backend should authorize the machine identity against `agentId`, track its active session/connection, and ignore stale connection disconnects when a replacement connection is active. Determine offline status from `OnDisconnectedAsync` and/or a server-side last-seen timeout (for example, greater than `max(45 seconds, 3 × configured sample interval)`). An offline message on graceful shutdown is best effort: a powered-off PC or a PC without network access cannot send one. Use server receive time for last-seen decisions, not the PC's potentially skewed clock.
+The existing backend authorizes the Agent JWT, validates the station assignment in `ConnectAgent`, tracks active connections, updates heartbeat/presence, and persists telemetry through `IMonitoringService`.
 
 Supported transport: direct ASP.NET Core SignalR, JSON protocol v1, negotiated WebSockets with Text, negotiation versions 0 and 1. Azure SignalR negotiate redirects, fallback SSE/long polling, MessagePack and stateful reconnect are not implemented. Service redirects fail explicitly rather than forwarding credentials to another host. Negotiation and framing follow the [ASP.NET Core transport specification](https://github.com/dotnet/aspnetcore/blob/main/src/SignalR/docs/specs/TransportProtocols.md) and [hub protocol specification](https://github.com/dotnet/aspnetcore/blob/main/src/SignalR/docs/specs/HubProtocol.md).
 

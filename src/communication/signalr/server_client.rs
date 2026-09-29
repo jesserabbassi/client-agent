@@ -72,7 +72,7 @@ impl ServerClient {
             .append_pair("negotiateVersion", "1");
         let mut request = client.post(negotiate).body("");
         if let Some(token) = token {
-            request = request.bearer_auth(token);
+            request = request.header(reqwest::header::COOKIE, format!("accessToken={token}"));
         }
         let mut response = request
             .send()
@@ -112,10 +112,10 @@ impl ServerClient {
             .map_err(|_| "invalid WebSocket request")?;
         if let Some(token) = token {
             request.headers_mut().insert(
-                "Authorization",
-                format!("Bearer {token}")
+                "Cookie",
+                format!("accessToken={token}")
                     .parse()
-                    .map_err(|_| "invalid bearer token")?,
+                    .map_err(|_| "invalid access-token cookie")?,
             );
         }
         let limits = WebSocketConfig::default()
