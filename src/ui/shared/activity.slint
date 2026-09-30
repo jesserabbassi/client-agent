@@ -6,6 +6,8 @@ export global Activity {
     in property <[Transaction]> transactions;
     in property <bool> session-active: false;
     in property <string> session-label: "No active session";
+    in property <string> session-elapsed: "00:00:00";
+    in property <string> session-remaining: "00:00:00";
     in property <string> message;
     in property <string> selected-game;
     callback choose-game(string);

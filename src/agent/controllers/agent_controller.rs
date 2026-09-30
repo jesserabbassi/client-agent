@@ -10,6 +10,12 @@ pub(crate) fn bind(ui: &ClientView) {
     otp_controller::bind(ui);
     login_controller::bind(ui, otp_controller::begin);
     let weak = ui.as_weak();
+    ui.on_open_full_agent(move || {
+        if let Some(ui) = weak.upgrade() {
+            crate::ui::leave_compact(&ui);
+        }
+    });
+    let weak = ui.as_weak();
     ui.on_navigate(move |page| {
         if let Some(ui) = weak.upgrade() {
             if ui.get_authenticated() {

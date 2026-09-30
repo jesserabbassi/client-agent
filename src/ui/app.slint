@@ -2,20 +2,29 @@ export { Activity, Reservation, Transaction } from "shared/activity.slint";
 import { OtpScreen } from "otp/otp.slint";
 import { LoginScreen } from "login/screen.slint";
 import { AppShell, Page } from "shell.slint";
+import { CompactSession } from "compact/compact.slint";
 import { Palette } from "std-widgets.slint";
 export { Page }
 export component ClientView inherits Window {
-    title: "Ninety Gaming House — Gaming Client";
+    title: root.compact-mode ? "Ninety Agent" : "Ninety Gaming House — Gaming Client";
     preferred-width: 1280px;
     preferred-height: 880px;
-    min-width: 1120px;
-    min-height: 830px;
+    min-width: root.compact-mode ? root.compact-width * 1px : 1120px;
+    max-width: root.compact-mode ? root.compact-width * 1px : 10000px;
+    min-height: root.compact-mode ? 820px : 830px;
+    max-height: root.compact-mode ? 820px : 10000px;
     background: #0b1019;
     default-font-family: "Arial";
     default-font-size: 14px;
     init => { Palette.color-scheme = ColorScheme.dark; }
     in property <bool> busy: false;
     in property <bool> authenticated: false;
+    in-out property <bool> compact-mode: false;
+    in-out property <float> compact-width: 150;
+    in-out property <int> full-window-x: 0;
+    in-out property <int> full-window-y: 0;
+    in-out property <int> full-window-width: 1280;
+    in-out property <int> full-window-height: 880;
     in property <bool> development-mode: true;
     in property <bool> connection-problem: false;
     in property <string> status-text;
@@ -33,6 +42,8 @@ export component ClientView inherits Window {
     callback navigate(Page);
     callback logout-requested();
     callback login-requested(string, string, bool);
+    callback register-requested(string, string, string);
+    callback open-full-agent();
     if !root.authenticated && !root.otp-pending: LoginScreen {
         busy: root.busy;
         authenticated: root.authenticated;
@@ -42,6 +53,7 @@ export component ClientView inherits Window {
         message: root.message;
         password <=> root.password;
         login-requested(u, p, r) => { root.login-requested(u, p, r); }
+        register-requested(e, p, c) => { root.register-requested(e, p, c); }
     }
     if !root.authenticated && root.otp-pending: OtpScreen {
         code <=> root.otp-code;
@@ -51,10 +63,14 @@ export component ClientView inherits Window {
         verify => { root.otp-verify(); }
         cancel => { root.otp-cancel(); }
     }
-    if root.authenticated: AppShell {
+    if root.authenticated && !root.compact-mode: AppShell {
         player-name: root.player-name;
         page: root.page;
         navigate(page) => { root.navigate(page); }
         logout => { root.logout-requested(); }
+    }
+    if root.authenticated && root.compact-mode: CompactSession {
+        player-name: root.player-name;
+        open-full-agent => { root.open-full-agent(); }
     }
 }

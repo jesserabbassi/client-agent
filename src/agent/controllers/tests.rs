@@ -40,6 +40,40 @@ fn login_callback_validates_and_delivers_worker_results() {
     ui.show().expect("show UI");
     use crate::ui::Activity;
     use slint::Model;
+    ui.set_authenticated(true);
+    ui.set_player_name("a-long-player-name@example.com".into());
+    ui.global::<Activity>().set_session_active(true);
+    ui.global::<Activity>()
+        .set_session_label("Station 01 · 1h".into());
+    ui.global::<Activity>()
+        .set_session_elapsed("00:13:42".into());
+    ui.global::<Activity>()
+        .set_session_remaining("00:46:18".into());
+    ui.global::<Activity>()
+        .set_selected_game("Counter-Strike 2".into());
+    crate::ui::enter_compact(&ui);
+    assert!(ui.get_compact_mode());
+    let compact_width = ui.get_compact_width().round() as u32;
+    window.set_size(slint::PhysicalSize::new(compact_width, 820));
+    window.request_redraw();
+    let mut compact_pixels = slint::SharedPixelBuffer::<slint::Rgb8Pixel>::new(compact_width, 820);
+    assert!(window.draw_if_needed(|renderer| {
+        renderer.render(compact_pixels.make_mut_slice(), compact_width as usize);
+    }));
+    if let Some(directory) = std::env::var_os("NINETY_TEST_CAPTURE_DIR") {
+        use std::io::Write;
+        let path = std::path::PathBuf::from(directory).join("compact-session.ppm");
+        let mut file = std::fs::File::create(path).expect("compact capture");
+        write!(file, "P6\n{compact_width} 820\n255\n").expect("compact header");
+        file.write_all(compact_pixels.as_bytes())
+            .expect("compact pixels");
+    }
+    crate::ui::leave_compact(&ui);
+    assert!(!ui.get_compact_mode());
+    ui.set_authenticated(false);
+    ui.set_player_name("".into());
+    ui.global::<Activity>().set_session_active(false);
+    ui.global::<Activity>().set_selected_game("".into());
     ui.global::<Activity>().invoke_start_session(1);
     assert!(!ui.global::<Activity>().get_session_active());
     ui.global::<Activity>().invoke_top_up("20".into());

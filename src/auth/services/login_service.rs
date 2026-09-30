@@ -1,6 +1,6 @@
 use crate::auth::{
     models::auth::{AuthError, LoginRequest, LoginResponse, OtpRequest},
-    services::auth_client::AuthClient,
+    services::auth_client::{AuthClient, RegisterRequest},
 };
 pub(crate) struct LoginService<C: AuthClient> {
     client: C,
@@ -21,7 +21,12 @@ impl<C: AuthClient> LoginService<C> {
     pub(crate) fn authenticate(&self, request: LoginRequest) -> Result<LoginResponse, AuthError> {
         self.client.authenticate(&request)
     }
-    pub(crate) fn verify_otp(&self, request: OtpRequest) -> Result<LoginResponse, AuthError> { self.client.verify_otp(&request) }
+    pub(crate) fn verify_otp(&self, request: OtpRequest) -> Result<LoginResponse, AuthError> {
+        self.client.verify_otp(&request)
+    }
+    pub(crate) fn register(&self, request: &RegisterRequest) -> Result<(), AuthError> {
+        self.client.register(request).map(|_| ())
+    }
 }
 #[cfg(test)]
 mod tests {
@@ -41,12 +46,32 @@ mod tests {
                 Err(AuthError::InvalidCredentials)
             }
         }
-        fn verify_otp(&self, _request: &OtpRequest) -> Result<LoginResponse, AuthError> { Err(AuthError::InvalidOtp) }
-        fn register(&self, _request: &super::super::auth_client::RegisterRequest) -> Result<Value, AuthError> { Ok(Value::Null) }
-        fn refresh(&self, _refresh_token: &str) -> Result<Value, AuthError> { Ok(Value::Null) }
-        fn logout(&self, _access_token: &str) -> Result<(), AuthError> { Ok(()) }
-        fn profile(&self, _access_token: &str) -> Result<Value, AuthError> { Ok(Value::Null) }
-        fn change_password(&self, _access_token: &str, _current: &str, _new: &str) -> Result<Value, AuthError> { Ok(Value::Null) }
+        fn verify_otp(&self, _request: &OtpRequest) -> Result<LoginResponse, AuthError> {
+            Err(AuthError::InvalidOtp)
+        }
+        fn register(
+            &self,
+            _request: &super::super::auth_client::RegisterRequest,
+        ) -> Result<Value, AuthError> {
+            Ok(Value::Null)
+        }
+        fn refresh(&self, _refresh_token: &str) -> Result<Value, AuthError> {
+            Ok(Value::Null)
+        }
+        fn logout(&self, _access_token: &str) -> Result<(), AuthError> {
+            Ok(())
+        }
+        fn profile(&self, _access_token: &str) -> Result<Value, AuthError> {
+            Ok(Value::Null)
+        }
+        fn change_password(
+            &self,
+            _access_token: &str,
+            _current: &str,
+            _new: &str,
+        ) -> Result<Value, AuthError> {
+            Ok(Value::Null)
+        }
     }
     fn request(username: &str, password: &str) -> LoginRequest {
         LoginRequest {
