@@ -1,15 +1,19 @@
-import { Theme } from "../shared/design.slint";
+import { Theme, ActionButton } from "../shared/design.slint";
 import { CheckBox } from "std-widgets.slint";
 import { InputField } from "input-field.slint";
 import { PrimaryButton } from "primary-button.slint";
 export component LoginPanel inherits Rectangle {
+    private property <bool> registering: false;
     in property <bool> busy;
     in property <bool> authenticated;
     in property <bool> connection-problem;
     in property <string> status-text;
     in property <string> message;
     in-out property <string> password;
+    private property <string> confirmation;
+    private property <bool> remember-me: false;
     callback login-requested(string, string, bool);
+    callback register-requested(string, string, string);
     background: Theme.surface;
     border-width: 1px;
     border-color: Theme.border;
@@ -21,19 +25,21 @@ export component LoginPanel inherits Rectangle {
         Text { text: "YOUR NEXT GREAT SESSION"; color: Theme.cyan; font-size: 11px; font-weight: 600; height: 18px; }
         HorizontalLayout {
             spacing: 8px; height: 38px;
-            Text { horizontal-stretch: 0; text: "Welcome"; color: Theme.text; font-size: 30px; font-weight: 800; }
-            Text { horizontal-stretch: 0; text: "back."; color: Theme.accent; font-size: 30px; font-weight: 800; }
+            Text { horizontal-stretch: 0; text: root.registering ? "Join" : "Welcome"; color: Theme.text; font-size: 30px; font-weight: 800; }
+            Text { horizontal-stretch: 0; text: root.registering ? "Ninety." : "back."; color: Theme.accent; font-size: 30px; font-weight: 800; }
             Rectangle { horizontal-stretch: 1; background: transparent; }
         }
-        Text { text: "Sign in to start your gaming session"; color: Theme.muted; font-size: 15px; height: 24px; }
-        username := InputField { label: "USERNAME OR EMAIL"; placeholder: "Enter your username or email"; active: !root.busy && !root.authenticated; accepted => { password-field.focus(); } }
-        password-field := InputField { label: "PASSWORD"; placeholder: "Enter your password"; secret: true; value <=> root.password; active: !root.busy && !root.authenticated; accepted => { root.login-requested(username.value, root.password, remember.checked); } }
-        remember := CheckBox { text: "Remember me"; enabled: !root.busy && !root.authenticated; height: 28px; }
+        Text { text: root.registering ? "Create an account to get started" : "Sign in to start your gaming session"; color: Theme.muted; font-size: 15px; height: 24px; }
+        username := InputField { label: root.registering ? "EMAIL" : "USERNAME OR EMAIL"; placeholder: root.registering ? "Enter your email" : "Enter your username or email"; active: !root.busy && !root.authenticated; accepted => { password-field.focus(); } }
+        password-field := InputField { label: "PASSWORD"; placeholder: "Enter your password"; secret: true; value <=> root.password; active: !root.busy && !root.authenticated; accepted => { if !root.registering { root.login-requested(username.value, root.password, root.remember-me); } } }
+        if root.registering: confirm-field := InputField { label: "CONFIRM PASSWORD"; placeholder: "Confirm your password"; secret: true; value <=> root.confirmation; active: !root.busy; accepted => { root.register-requested(username.value, root.password, root.confirmation); } }
+        if !root.registering: remember := CheckBox { text: "Remember me"; checked <=> root.remember-me; enabled: !root.busy && !root.authenticated; height: 28px; }
         PrimaryButton {
-            label: root.busy ? "SIGNING IN…" : root.authenticated ? "AUTHENTICATED  ✓" : "Let’s play   →";
+            label: root.busy ? (root.registering ? "CREATING ACCOUNT…" : "SIGNING IN…") : root.registering ? "Create account  →" : root.authenticated ? "AUTHENTICATED  ✓" : "Let’s play   →";
             active: !root.busy && !root.authenticated;
-            clicked => { root.login-requested(username.value, root.password, remember.checked); }
+            clicked => { if root.registering { root.register-requested(username.value, root.password, root.confirmation); } else { root.login-requested(username.value, root.password, root.remember-me); } }
         }
+        ActionButton { text: root.registering ? "Already have an account? Sign in" : "New here? Create an account"; enabled: !root.busy; clicked => { root.registering = !root.registering; root.password = ""; root.confirmation = ""; } }
         Text { text: root.message; color: root.authenticated ? #21dfb0 : root.busy ? Theme.muted : #ff9b80; font-size: 13px; wrap: word-wrap; height: 38px; }
         Rectangle { height: 1px; background: #25384e; }
         HorizontalLayout {

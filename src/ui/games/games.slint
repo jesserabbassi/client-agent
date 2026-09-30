@@ -8,6 +8,7 @@ export component Games inherits Rectangle {
         Eyebrow { text: "FIND YOUR NEXT OBSESSION"; color: Theme.accent; }
         Text { text: "The games library."; color: Theme.text; font-size: 32px; font-weight: 700; height: 42px; }
         Text { text: Activity.session-active ? Activity.session-label + " · Choose a game to make it yours." : "From the first round to the final whistle. Start a session to choose a game."; color: Theme.muted; font-size: 13px; wrap: word-wrap; height: 32px; }
+        if Activity.message != "": Text { text: Activity.message; color: Theme.accent; font-size: 12px; wrap: word-wrap; min-height: 28px; }
         HorizontalLayout { spacing: 8px; height: 40px;
             for label in ["All Games", "FPS", "MOBA", "Sports", "Racing"]: ActionButton {
                 text: label; primary: root.category == label; min-width: 85px; clicked => { root.category = label; }
@@ -33,7 +34,7 @@ export component Games inherits Rectangle {
                             Text { text: game.genre; color: Theme.subtle; font-size: 9px; horizontal-alignment: right; width: 40px; vertical-alignment: center; }
                         }
                         ActionButton {
-                            text: Activity.selected-game == game.name ? "Selected  ✓" : "Choose game  →";
+                            text: Activity.selected-game == game.name ? "Launch again  ↗" : "Launch game  →";
                             height: 40px;
                             primary: Activity.selected-game == game.name;
                             enabled: Activity.session-active && (root.category == "All Games" || root.category == game.genre);
@@ -49,7 +50,7 @@ export component Games inherits Rectangle {
                     Eyebrow { text: "YOUR LINEUP"; color: Theme.cyan; }
                     Text { text: Activity.selected-game == "" ? "Good games are better together." : "Up next: " + Activity.selected-game; color: Theme.text; font-size: 19px; font-weight: 600; wrap: word-wrap; }
                     Text { text: Activity.message; color: Theme.muted; font-size: 12px; wrap: word-wrap; }
-                    Text { text: "Demo catalog · Game launching is not connected yet."; color: Theme.subtle; font-size: 10px; }
+                    Text { text: "The game must be installed on this computer."; color: Theme.subtle; font-size: 10px; }
                 }
                 if Activity.session-active: ActionButton { text: "End session"; width: 125px; height: 42px; clicked => { Activity.end(); } }
             }

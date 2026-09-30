@@ -14,7 +14,8 @@ Development credentials: **player / password**, followed by demo verification co
 ## Pages
 
 - **Dashboard:** use **Start a session** to play immediately without a prior reservation (choose 1–3 hours; an available demo station is assigned), or reserve one of four demo stations for 1–3 hours, see reservations, and start/end a session. Sessions cost 6.00 € per reserved hour, charged once when starting. Early finishes do not refund the fixed price.
-- **Games:** starting a session opens the game picker. Choose or change the session’s game, then end the session from Games or Dashboard. Game selection is demo state; game launching is not connected.
+- **Games:** starting a session opens the game picker. Choosing a game launches its installed executable or launcher; the side strip appears after the launch request succeeds. If a launcher is missing, the game picker shows the error and stays open.
+- Choosing a game during an active session switches the full agent to a narrow side strip. On macOS its width is calculated from the display's reported physical size to be about 3 cm, and it sits at the screen's right edge. The strip shows elapsed time and time remaining, updated every second. **Open** restores the previous window size and position; **End** stops the timer and restores the dashboard.
 - **Wallet:** shared balance, demo top-ups from 1.00–500.00 €, and transaction history for credits and session charges. No real money is moved.
 
 The sidebar contains only these three pages. Login and logout are retained. Reservations are for the next available slot in this local demo. Only one session can run at a time; end it before logging out. State survives logout in this single-demo-account app and resets when the app closes. No station availability service, scheduled bookings, automatic session expiry, or payment backend is connected.
@@ -64,6 +65,8 @@ src/
 
 Authentication runs in a short-lived worker, then updates Slint through its event loop. Duplicate submissions are blocked. No polling loops are used. Credentials are not persisted or logged. Remember me is an in-memory preference only.
 
+The login screen also has **Create an account**. The local ASP.NET backend in `Desktop/backend/NinetyBackend` now exposes `POST /api/Auth/register` and `POST /api/Auth/login`. Run it with `dotnet run --project ../backend/NinetyBackend --launch-profile http` from this client directory, or set `NINETY_BASE_URL` to its URL. The client `.env` points to `http://127.0.0.1:5268`. Accounts are stored in the backend user's local application data under `NinetyBackend/users.json`; passwords are stored as salted PBKDF2 hashes.
+
 ## Verification
 
 ```sh
@@ -82,7 +85,20 @@ NINETY_MOCK_MODE=unavailable cargo test
 NINETY_MOCK_MODE=network-error cargo test
 ```
 
-Client-side SignalR telemetry is implemented; its production backend is not included. Game launching and payments remain demo-only. Windows runtime validation remains pending.
+Client-side SignalR telemetry is implemented; its production backend is not included. Payments remain demo-only. Windows runtime validation remains pending.
+
+Game launch paths can be set in `.env` with `NINETY_GAME_CS2`, `NINETY_GAME_VALORANT`, `NINETY_GAME_LOL`, `NINETY_GAME_DOTA2`, `NINETY_GAME_FC24`, and `NINETY_GAME_ROCKET_LEAGUE`. Use an absolute executable path or a macOS `.app` bundle. Optional arguments use a JSON array in the corresponding `_ARGS` setting. Counter-Strike 2 and Dota 2 use their Steam app IDs when no path is configured and Steam is installed. The client starts the launcher and does not verify that the game finishes loading.
+
+To configure a game on a station, add its absolute executable path to that station's client `.env` and restart the client. Windows paths can use forward slashes, for example `NINETY_GAME_ROCKET_LEAGUE="C:/Games/Rocket League/RocketLeague.exe"`; macOS apps can use a bundle path such as `NINETY_GAME_LOL="/Applications/Your Game.app"`. Quote paths containing spaces. Launchers that need command-line arguments can use a JSON string array in the matching `_ARGS` variable. The configured game must be installed on the same computer as the client.
+
+| Game | `.env` setting | Default launcher |
+| --- | --- | --- |
+| Counter-Strike 2 | `NINETY_GAME_CS2` | Steam, if installed |
+| Valorant | `NINETY_GAME_VALORANT` | Configure path |
+| League of Legends | `NINETY_GAME_LOL` | Configure path |
+| Dota 2 | `NINETY_GAME_DOTA2` | Steam, if installed |
+| EA FC 24 | `NINETY_GAME_FC24` | Configure path |
+| Rocket League | `NINETY_GAME_ROCKET_LEAGUE` | Configure path |
 
 ## Hardware monitoring and telemetry
 

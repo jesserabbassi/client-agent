@@ -2912,6 +2912,7 @@ name = "ninety-client-agent"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "core-graphics",
  "dotenvy",
  "futures-util",
  "nvml-wrapper",

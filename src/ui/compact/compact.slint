@@ -1,0 +1,71 @@
+import { Button } from "std-widgets.slint";
+import { Activity } from "../shared/activity.slint";
+import { Theme } from "../shared/design.slint";
+
+component StripButton inherits Rectangle {
+    in property <string> label;
+    in property <bool> primary: false;
+    callback clicked();
+    height: 44px;
+    border-radius: 9px;
+    border-width: 1px;
+    border-color: root.primary ? Theme.accent : Theme.border;
+    background: root.primary ? Theme.accent : Theme.elevated;
+    Text {
+        text: root.label;
+        color: root.primary ? #1c1412 : Theme.text;
+        font-size: 11px;
+        font-weight: 700;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+    Button { width: parent.width; height: parent.height; opacity: 0; clicked => { root.clicked(); } }
+}
+
+export component CompactSession inherits Rectangle {
+    in property <string> player-name;
+    callback open-full-agent();
+    background: Theme.background;
+    VerticalLayout { spacing: 0px;
+        Rectangle { height: 46px; background: Theme.surface;
+            HorizontalLayout { padding-left: 14px; padding-right: 14px;
+                Text { text: "N"; color: Theme.accent; font-size: 22px; font-weight: 800; vertical-alignment: center; }
+                Rectangle { horizontal-stretch: 1; background: transparent; }
+                Text { text: "●"; color: Theme.cyan; font-size: 12px; vertical-alignment: center; }
+            }
+        }
+        VerticalLayout { padding: 10px; spacing: 12px;
+            Rectangle { height: 75px; background: transparent;
+                Rectangle { x: (parent.width - self.width) / 2; y: 2px; width: 38px; height: 38px; border-radius: 11px; background: Theme.accent;
+                    Text { text: "N"; color: #1c1412; font-size: 22px; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; }
+                }
+                Text { y: 49px; width: parent.width; text: "NINETY"; color: Theme.text; font-size: 11px; font-weight: 800; horizontal-alignment: center; }
+            }
+            Rectangle { height: 1px; background: Theme.border; }
+            Text { text: "●  PLAYING"; color: Theme.cyan; font-size: 10px; font-weight: 700; horizontal-alignment: center; }
+            Rectangle { height: 102px; border-radius: 10px; background: Theme.surface; border-width: 1px; border-color: Theme.border;
+                VerticalLayout { padding: 10px; spacing: 7px;
+                    Text { text: "ELAPSED"; color: Theme.subtle; font-size: 9px; font-weight: 700; horizontal-alignment: center; }
+                    Text { text: Activity.session-elapsed; color: Theme.text; font-size: 20px; font-weight: 800; horizontal-alignment: center; }
+                    Text { text: "LEFT " + Activity.session-remaining; color: Theme.cyan; font-size: 10px; font-weight: 600; horizontal-alignment: center; }
+                }
+            }
+            Rectangle { height: 95px; border-radius: 10px; background: Theme.surface; border-width: 1px; border-color: Theme.border;
+                VerticalLayout { padding: 10px; spacing: 8px;
+                    Text { text: "SESSION"; color: Theme.subtle; font-size: 9px; font-weight: 700; horizontal-alignment: center; }
+                    Text { text: Activity.session-label; color: Theme.text; font-size: 12px; font-weight: 700; wrap: word-wrap; horizontal-alignment: center; }
+                }
+            }
+            Rectangle { height: 120px; border-radius: 10px; background: Theme.surface; border-width: 1px; border-color: Theme.border;
+                VerticalLayout { padding: 10px; spacing: 9px;
+                    Text { text: "GAME"; color: Theme.subtle; font-size: 9px; font-weight: 700; horizontal-alignment: center; }
+                    Text { text: Activity.selected-game; color: Theme.text; font-size: 12px; font-weight: 700; wrap: word-wrap; horizontal-alignment: center; }
+                    Text { text: "●  Ready"; color: Theme.cyan; font-size: 10px; horizontal-alignment: center; }
+                }
+            }
+            Rectangle { vertical-stretch: 1; background: transparent; }
+            StripButton { label: "END"; clicked => { Activity.end(); } }
+            StripButton { label: "OPEN  ↗"; primary: true; clicked => { root.open-full-agent(); } }
+        }
+    }
+}

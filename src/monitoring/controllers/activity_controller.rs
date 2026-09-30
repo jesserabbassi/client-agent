@@ -1,6 +1,10 @@
 use crate::ui::{Activity, ClientView, Page, Reservation, Transaction};
 use slint::{ComponentHandle, ModelRc, VecModel};
-use std::{cell::RefCell, rc::Rc};
+use std::{
+    cell::RefCell,
+    rc::Rc,
+    time::{Duration, Instant},
+};
 
 #[derive(Default)]
 struct State {
@@ -8,7 +12,17 @@ struct State {
     reservations: Vec<Reservation>,
     transactions: Vec<Transaction>,
     active: Option<i32>,
+    started_at: Option<Instant>,
+    duration_seconds: u64,
     selected_game: String,
+}
+fn clock_time(seconds: u64) -> String {
+    format!(
+        "{:02}:{:02}:{:02}",
+        seconds / 3600,
+        (seconds / 60) % 60,
+        seconds % 60
+    )
 }
 fn money(cents: i32) -> String {
     format!("{}.{:02} €", cents / 100, cents % 100)
@@ -46,6 +60,7 @@ impl State {
         view.set_reservations(ModelRc::new(VecModel::from(self.reservations.clone())));
         view.set_transactions(ModelRc::new(VecModel::from(self.transactions.clone())));
         view.set_session_active(self.active.is_some());
+        self.publish_time(ui);
         view.set_session_label(
             self.active
                 .and_then(|id| self.reservations.iter().find(|r| r.id == id))
@@ -54,6 +69,17 @@ impl State {
                 .into(),
         );
         view.set_message(message.into());
+    }
+    fn publish_time(&self, ui: &ClientView) {
+        let elapsed = self
+            .started_at
+            .map(|start| start.elapsed().as_secs())
+            .unwrap_or(0);
+        let view = ui.global::<Activity>();
+        view.set_session_elapsed(clock_time(elapsed).into());
+        view.set_session_remaining(
+            clock_time(self.duration_seconds.saturating_sub(elapsed)).into(),
+        );
     }
     fn transaction(&mut self, description: String, cents: i32) {
         self.transactions.insert(
@@ -73,6 +99,7 @@ impl State {
 }
 pub(crate) fn bind(ui: &ClientView) {
     let state = Rc::new(RefCell::new(State::default()));
+    let session_timer = Rc::new(slint::Timer::default());
     let weak = ui.as_weak();
     let data = state.clone();
     ui.global::<Activity>().on_top_up(move |text| {
@@ -172,6 +199,7 @@ pub(crate) fn bind(ui: &ClientView) {
     });
     let weak = ui.as_weak();
     let data = state.clone();
+    let timer_for_start = session_timer.clone();
     ui.global::<Activity>().on_start(move |id| {
         let Some(ui) = weak.upgrade() else { return };
         if !ui.get_authenticated() {
@@ -200,10 +228,24 @@ pub(crate) fn bind(ui: &ClientView) {
         }
         state.cents -= cost;
         state.active = Some(id);
+        state.started_at = Some(Instant::now());
+        state.duration_seconds = (cost / 600) as u64 * 3600;
         state.reservations[index].status = "Playing".into();
         state.transaction(format!("{} · {} session", row.station, row.duration), -cost);
         state.selected_game.clear();
         state.publish(&ui, "Session started. Choose the game you want to play.");
+        drop(state);
+        let tick_ui = ui.as_weak();
+        let tick_state = Rc::downgrade(&data);
+        timer_for_start.start(
+            slint::TimerMode::Repeated,
+            Duration::from_secs(1),
+            move || {
+                if let (Some(ui), Some(state)) = (tick_ui.upgrade(), tick_state.upgrade()) {
+                    state.borrow().publish_time(&ui);
+                }
+            },
+        );
         ui.set_page(Page::Games);
     });
     let weak = ui.as_weak();
@@ -233,13 +275,16 @@ pub(crate) fn bind(ui: &ClientView) {
         {
             return;
         }
+        if let Err(error) = crate::agent::game_launcher::launch_game(&game) {
+            state.publish(&ui, &error);
+            return;
+        }
         state.selected_game = game.to_string();
-        state.publish(
-            &ui,
-            "Game selected for this session. Demo only: game launching is not connected.",
-        );
+        state.publish(&ui, "Game launcher started. Enjoy your session.");
+        crate::ui::enter_compact(&ui);
     });
     let weak = ui.as_weak();
+    let timer_for_end = session_timer.clone();
     ui.global::<Activity>().on_end(move || {
         let Some(ui) = weak.upgrade() else { return };
         if !ui.get_authenticated() {
@@ -249,17 +294,26 @@ pub(crate) fn bind(ui: &ClientView) {
         let Some(id) = state.active.take() else {
             return;
         };
+        timer_for_end.stop();
+        state.started_at = None;
+        state.duration_seconds = 0;
         if let Some(row) = state.reservations.iter_mut().find(|r| r.id == id) {
             row.status = "Completed".into();
         }
         state.selected_game.clear();
         state.publish(&ui, "Session ended. Thanks for playing!");
+        crate::ui::leave_compact(&ui);
         ui.set_page(Page::Dashboard);
     });
 }
 #[cfg(test)]
 mod tests {
-    use super::amount;
+    use super::{amount, clock_time};
+    #[test]
+    fn formats_session_time() {
+        assert_eq!(clock_time(0), "00:00:00");
+        assert_eq!(clock_time(3661), "01:01:01");
+    }
     #[test]
     fn validates_top_up_without_rounding_or_overflow() {
         for (input, expected) in [
