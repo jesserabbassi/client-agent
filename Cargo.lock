@@ -2911,6 +2911,7 @@ checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
 name = "ninety-client-agent"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "dotenvy",
  "futures-util",
  "nvml-wrapper",
@@ -4158,7 +4159,9 @@ checksum = "eddd3ca559203180a307f12d114c268abf583f59b03cb906fd0b3ff8646c1147"
 dependencies = [
  "base64",
  "bytes",
+ "futures-channel",
  "futures-core",
+ "futures-util",
  "http",
  "http-body",
  "http-body-util",

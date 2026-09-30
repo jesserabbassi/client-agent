@@ -5,10 +5,12 @@ pub(crate) struct LoginRequest {
     pub(crate) remember_me: bool,
 }
 pub(crate) struct LoginResponse {
+    pub(crate) user_id: String,
     pub(crate) username: String,
-    // Future backend tokens require OS credential storage before persistence.
+    pub(crate) requires_otp: bool,
     pub(crate) access_token: Option<String>,
 }
+pub(crate) struct OtpRequest { pub(crate) user_id: String, pub(crate) code: String }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum AuthState {
     Idle,
@@ -17,10 +19,12 @@ pub(crate) enum AuthState {
     InvalidCredentials,
     ServerUnavailable,
     NetworkError,
+    InvalidOtp,
 }
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum AuthError {
     InvalidCredentials,
     ServerUnavailable,
     NetworkError,
+    InvalidOtp,
 }

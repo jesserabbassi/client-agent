@@ -88,7 +88,7 @@ Client-side SignalR telemetry is implemented; its production backend is not incl
 
 The monitoring module follows the supplied service/infrastructure/model architecture: `MonitoringService` coordinates `HardwareMonitor`, `PeripheralMonitor` and `NetworkMonitor`; `TelemetrySender` queues and sends through the SignalR `ServerClient`.
 
-The hub URL and settings live in `.env` (tracked template: `.env.example`). The local placeholder is `http://localhost:5000/hubs/telemetry`, with `NINETY_TELEMETRY_ENABLED=false` while the backend is not ready. Set the real URL, a unique `NINETY_AGENT_ID`, the machine credential and `NINETY_TELEMETRY_ENABLED=true` when connecting a backend. Collection and communication run on separate background threads, independently of Slint and player login.
+The hub URL and settings live in `.env` (tracked template: `.env.example`). The production hub is `/hubs/agents`. Set the assigned `NINETY_STATION_ID`, an Agent JWT token file, and `NINETY_TELEMETRY_ENABLED=true` when connecting a backend. The JWT contains the server-issued Agent identity; the client does not choose or transmit an arbitrary Agent ID. Collection and communication run on separate background threads, independently of Slint and player login.
 
 See [telemetry architecture, configuration, data contract and tests](docs/telemetry.md) for supported GPU metrics, app/peripheral collection, reconnect behavior and offline presence semantics.
 
