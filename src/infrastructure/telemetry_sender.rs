@@ -156,7 +156,10 @@ async fn session_loop(
                 let message = message?;
                 match message["type"].as_u64() {
                     Some(3) if pending.as_ref().is_some_and(|(id, _)| message["invocationId"].as_str() == Some(id)) => {
-                        if message.get("error").is_some() { return Err("backend rejected SignalR invocation"); }
+                        if let Some(error) = message["error"].as_str() {
+                            tracing::warn!(reason = error, "Backend rejected SignalR invocation");
+                            return Err("backend rejected SignalR invocation");
+                        }
                         if let Some((_, sent)) = pending.take() { network_monitor.record_latency(sent.elapsed()); }
                     }
                     Some(6) => {}
@@ -194,11 +197,11 @@ async fn await_completion(sender: &mut TelemetrySender, invocation_id: &str) -> 
         let message = sender.server_client.receive().await?;
         match message["type"].as_u64() {
             Some(3) if message["invocationId"].as_str() == Some(invocation_id) => {
-                return if message.get("error").is_some() {
-                    Err("backend rejected ConnectAgent")
-                } else {
-                    Ok(())
-                };
+                if let Some(error) = message["error"].as_str() {
+                    tracing::warn!(reason = error, "Backend rejected ConnectAgent");
+                    return Err("backend rejected ConnectAgent");
+                }
+                return Ok(());
             }
             Some(6) | Some(1) => {}
             _ => return Err("unexpected ConnectAgent response"),
