@@ -1,10 +1,41 @@
 import { Activity } from "../shared/activity.slint";
 import { Theme, Panel, Eyebrow, ActionButton } from "../shared/design.slint";
+component GameTile inherits Panel {
+    min-width: 0px;
+    preferred-width: 180px;
+    horizontal-stretch: 1;
+    in property <string> name;
+    in property <string> genre;
+    in property <string> mark;
+    in property <string> subtitle;
+    in property <color> accent;
+    in property <string> category;
+    opacity: root.category == "All Games" || root.category == root.genre ? 1 : 0.3;
+    border-color: Activity.selected-game == root.name ? Theme.cyan : Theme.border;
+    VerticalLayout { padding: 12px; spacing: 10px;
+        Rectangle { height: 118px; border-radius: 7px; clip: true; background: @linear-gradient(135deg, root.accent.darker(45%), #141d2a);
+            for i in 5: Rectangle { x: parent.width * 0.52 + i * 19px; y: -12px; width: 1px; height: 155px; background: root.accent; opacity: 0.25; }
+            Text { x: 16px; y: 18px; text: root.mark; color: #ffffff; font-size: 37px; font-weight: 900; }
+            Text { x: 16px; y: 89px; text: root.subtitle; color: root.accent.brighter(40%); font-size: 8px; font-weight: 600; }
+        }
+        HorizontalLayout { height: 30px; spacing: 4px;
+            Text { text: root.name; color: Theme.text; font-size: 14px; font-weight: 600; wrap: word-wrap; vertical-alignment: center; }
+            Text { text: root.genre; color: Theme.subtle; font-size: 9px; horizontal-alignment: right; width: 40px; vertical-alignment: center; }
+        }
+        ActionButton {
+            text: Activity.selected-game == root.name ? "Launch again  ↗" : "Launch game  →";
+            height: 40px;
+            primary: Activity.selected-game == root.name;
+            enabled: Activity.session-active && (root.category == "All Games" || root.category == root.genre);
+            clicked => { Activity.choose-game(root.name); }
+        }
+    }
+}
 export component Games inherits Rectangle {
     private property <string> category: "All Games";
     background: Theme.background;
-    min-height: 850px;
-    VerticalLayout { width: min(root.width, 1320px); x: (root.width - self.width) / 2; alignment: start; padding: 32px; spacing: 18px;
+    min-height: root.width < 900px ? 1250px : 950px;
+    VerticalLayout { width: min(root.width, 1320px); x: (root.width - self.width) / 2; alignment: start; padding: root.width < 800px ? 20px : 32px; spacing: root.width < 800px ? 12px : 18px;
         Eyebrow { text: "FIND YOUR NEXT OBSESSION"; color: Theme.accent; }
         Text { text: "The games library."; color: Theme.text; font-size: 32px; font-weight: 700; height: 42px; }
         Text { text: Activity.session-active ? Activity.session-label + " · Choose a game to make it yours." : "From the first round to the final whistle. Start a session to choose a game."; color: Theme.muted; font-size: 13px; wrap: word-wrap; height: 32px; }
@@ -15,34 +46,13 @@ export component Games inherits Rectangle {
             }
             Rectangle { horizontal-stretch: 1; background: transparent; }
         }
-        VerticalLayout { spacing: 16px;
-            for row in [
-                [{ name: "Counter-Strike 2", genre: "FPS", mark: "CS / 2", subtitle: "EVERY ROUND COUNTS", accent: #bf8950 }, { name: "Valorant", genre: "FPS", mark: "V /", subtitle: "DEFY THE LIMITS", accent: #d76078 }, { name: "League of Legends", genre: "MOBA", mark: "L / L", subtitle: "OWN THE RIFT", accent: #4ea9b0 }],
-                [{ name: "Dota 2", genre: "MOBA", mark: "D / 2", subtitle: "MAKE YOUR LEGEND", accent: #bd6553 }, { name: "EA FC 24", genre: "Sports", mark: "FC /", subtitle: "FOR THE LOVE OF FOOTBALL", accent: #80a676 }, { name: "Rocket League", genre: "Racing", mark: "R / L", subtitle: "TAKE TO THE SKY", accent: #729ee6 }]
-            ]: HorizontalLayout { spacing: 16px; height: 254px;
-                for game in row: Panel {
-                    opacity: root.category == "All Games" || root.category == game.genre ? 1 : 0.3;
-                    border-color: Activity.selected-game == game.name ? Theme.cyan : Theme.border;
-                    VerticalLayout { padding: 12px; spacing: 10px;
-                        Rectangle { height: 118px; border-radius: 7px; clip: true; background: @linear-gradient(135deg, game.accent.darker(45%), #141d2a);
-                            for i in 5: Rectangle { x: parent.width * 0.52 + i * 19px; y: -12px; width: 1px; height: 155px; background: game.accent; opacity: 0.25; }
-                            Text { x: 16px; y: 18px; text: game.mark; color: #ffffff; font-size: 37px; font-weight: 900; }
-                            Text { x: 16px; y: 89px; text: game.subtitle; color: game.accent.brighter(40%); font-size: 8px; font-weight: 600; }
-                        }
-                        HorizontalLayout { height: 30px; spacing: 4px;
-                            Text { text: game.name; color: Theme.text; font-size: 14px; font-weight: 600; wrap: word-wrap; vertical-alignment: center; }
-                            Text { text: game.genre; color: Theme.subtle; font-size: 9px; horizontal-alignment: right; width: 40px; vertical-alignment: center; }
-                        }
-                        ActionButton {
-                            text: Activity.selected-game == game.name ? "Launch again  ↗" : "Launch game  →";
-                            height: 40px;
-                            primary: Activity.selected-game == game.name;
-                            enabled: Activity.session-active && (root.category == "All Games" || root.category == game.genre);
-                            clicked => { Activity.choose-game(game.name); }
-                        }
-                    }
-                }
-            }
+        GridLayout { spacing: root.width < 900px ? 10px : 16px; height: root.width < 900px ? 782px : 524px;
+            GameTile { row: 0; col: 0; name: "Counter-Strike 2"; genre: "FPS"; mark: "CS / 2"; subtitle: "EVERY ROUND COUNTS"; accent: #bf8950; category: root.category; }
+            GameTile { row: 0; col: 1; name: "Valorant"; genre: "FPS"; mark: "V /"; subtitle: "DEFY THE LIMITS"; accent: #d76078; category: root.category; }
+            GameTile { row: root.width < 900px ? 1 : 0; col: root.width < 900px ? 0 : 2; name: "League of Legends"; genre: "MOBA"; mark: "L / L"; subtitle: "OWN THE RIFT"; accent: #4ea9b0; category: root.category; }
+            GameTile { row: root.width < 900px ? 1 : 1; col: root.width < 900px ? 1 : 0; name: "Dota 2"; genre: "MOBA"; mark: "D / 2"; subtitle: "MAKE YOUR LEGEND"; accent: #bd6553; category: root.category; }
+            GameTile { row: root.width < 900px ? 2 : 1; col: root.width < 900px ? 0 : 1; name: "EA FC 24"; genre: "Sports"; mark: "FC /"; subtitle: "FOR THE LOVE OF FOOTBALL"; accent: #80a676; category: root.category; }
+            GameTile { row: root.width < 900px ? 2 : 1; col: root.width < 900px ? 1 : 2; name: "Rocket League"; genre: "Racing"; mark: "R / L"; subtitle: "TAKE TO THE SKY"; accent: #729ee6; category: root.category; }
         }
         Panel { min-height: 125px; background: #152429; border-color: #2b4447;
             HorizontalLayout { padding: 22px; spacing: 20px;

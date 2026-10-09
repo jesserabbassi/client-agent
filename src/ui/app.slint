@@ -7,12 +7,13 @@ import { Palette } from "std-widgets.slint";
 export { Page }
 export component ClientView inherits Window {
     title: root.compact-mode ? "Ninety Agent" : "Ninety Gaming House — Gaming Client";
-    preferred-width: 1280px;
-    preferred-height: 880px;
-    min-width: root.compact-mode ? root.compact-width * 1px : 1120px;
-    max-width: root.compact-mode ? root.compact-width * 1px : 10000px;
-    min-height: root.compact-mode ? 820px : 830px;
-    max-height: root.compact-mode ? 820px : 10000px;
+    always-on-top: root.compact-mode;
+    preferred-width: root.compact-mode ? root.compact-width * 1px : 1280px;
+    preferred-height: root.compact-mode ? 820px : 880px;
+    min-width: 140px;
+    max-width: 10000px;
+    min-height: 480px;
+    max-height: 10000px;
     background: #0b1019;
     default-font-family: "Arial";
     default-font-size: 14px;
@@ -25,16 +26,21 @@ export component ClientView inherits Window {
     in-out property <int> full-window-y: 0;
     in-out property <int> full-window-width: 1280;
     in-out property <int> full-window-height: 880;
+    in-out property <bool> full-window-maximized: false;
+    in-out property <bool> full-window-fullscreen: false;
     in property <bool> development-mode: true;
     in property <bool> connection-problem: false;
     in property <string> status-text;
     in property <string> message;
     in-out property <string> password;
+    in-out property <bool> registering: false;
+    in property <bool> registration-success: false;
     in property <string> player-name;
     in property <Page> page: Page.dashboard;
     in property <bool> otp-pending: false;
     in-out property <string> otp-code;
     in-out property <string> otp-user-id;
+    in-out property <int> otp-purpose: 1;
     in property <string> otp-error;
     in property <int> otp-attempts: 0;
     callback otp-verify();
@@ -42,7 +48,7 @@ export component ClientView inherits Window {
     callback navigate(Page);
     callback logout-requested();
     callback login-requested(string, string, bool);
-    callback register-requested(string, string, string);
+    callback register-requested(string, string, string, string, string);
     callback open-full-agent();
     if !root.authenticated && !root.otp-pending: LoginScreen {
         busy: root.busy;
@@ -52,8 +58,10 @@ export component ClientView inherits Window {
         status-text: root.status-text;
         message: root.message;
         password <=> root.password;
+        registering <=> root.registering;
+        registration-success: root.registration-success;
         login-requested(u, p, r) => { root.login-requested(u, p, r); }
-        register-requested(e, p, c) => { root.register-requested(e, p, c); }
+        register-requested(f, l, e, p, c) => { root.register-requested(f, l, e, p, c); }
     }
     if !root.authenticated && root.otp-pending: OtpScreen {
         code <=> root.otp-code;

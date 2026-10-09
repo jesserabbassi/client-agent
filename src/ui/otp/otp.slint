@@ -1,5 +1,5 @@
 import { Theme, ActionButton } from "../shared/design.slint";
-import { LineEdit } from "std-widgets.slint";
+import { LineEdit, ScrollView } from "std-widgets.slint";
 export component OtpScreen inherits Rectangle {
     in-out property <string> code;
     in property <string> error;
@@ -8,11 +8,12 @@ export component OtpScreen inherits Rectangle {
     callback verify();
     callback cancel();
     background: @linear-gradient(120deg, #0b1019, #17252c, #0b1019);
-    VerticalLayout { alignment: center; spacing: 22px;
+    ScrollView { width: root.width; height: root.height; viewport-width: max(self.width, 400px); viewport-height: max(self.height, 680px); vertical-scrollbar-policy: ScrollBarPolicy.as-needed; horizontal-scrollbar-policy: ScrollBarPolicy.as-needed; mouse-drag-pan-enabled: true;
+    VerticalLayout { width: max(root.width, 400px); height: max(root.height, 680px); alignment: center; spacing: 22px;
         Text { text: "NINETY"; color: white; font-size: 34px; font-weight: 900; horizontal-alignment: center; height: 45px; }
         Text { text: "G A M I N G   H O U S E"; color: #91acbf; font-size: 11px; horizontal-alignment: center; height: 20px; }
         HorizontalLayout { alignment: center;
-            Rectangle { width: 490px; height: 550px; background: Theme.surface; border-width: 1px; border-color: Theme.border; border-radius: 16px;
+            Rectangle { width: min(490px, parent.width - 32px); height: 550px; background: Theme.surface; border-width: 1px; border-color: Theme.border; border-radius: 16px;
                 VerticalLayout { padding: 36px; spacing: 18px;
                     Text { text: "ONE MORE STEP"; color: Theme.accent; font-size: 12px; height: 20px; }
                     Text { text: "You’re almost in."; color: white; font-size: 30px; font-weight: 700; height: 42px; }
@@ -25,5 +26,6 @@ export component OtpScreen inherits Rectangle {
                 }
             }
         }
+    }
     }
 }

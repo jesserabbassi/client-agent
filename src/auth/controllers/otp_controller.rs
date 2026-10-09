@@ -1,6 +1,6 @@
 use crate::{
     auth::{
-        models::auth::OtpRequest,
+        models::auth::{AuthError, OtpRequest},
         services::{auth_client::ServerAuthClient, login_service::LoginService},
     },
     ui::{ClientView, Page},
@@ -23,6 +23,7 @@ pub(crate) fn reset(ui: &ClientView) {
     ui.set_otp_error("".into());
     ui.set_otp_attempts(0);
     ui.set_otp_user_id("".into());
+    ui.set_otp_purpose(1);
 }
 
 pub(crate) fn bind(ui: &ClientView) {
@@ -32,7 +33,15 @@ pub(crate) fn bind(ui: &ClientView) {
         if !ui.get_otp_pending() || ui.get_authenticated() || ui.get_otp_attempts() >= 5 {
             return;
         }
-        let result = ServerAuthClient::from_env().map(LoginService::new).and_then(|service| service.verify_otp(OtpRequest { user_id: ui.get_otp_user_id().to_string(), code: ui.get_otp_code().to_string() }));
+        let result = ServerAuthClient::from_env()
+            .map(LoginService::new)
+            .and_then(|service| {
+                service.verify_otp(OtpRequest {
+                    user_id: ui.get_otp_user_id().to_string(),
+                    code: ui.get_otp_code().to_string(),
+                    purpose: ui.get_otp_purpose() as u8,
+                })
+            });
         ui.set_otp_code("".into());
         match result {
             Ok(response) => {
@@ -42,7 +51,7 @@ pub(crate) fn bind(ui: &ClientView) {
                 ui.set_authenticated(true);
                 ui.set_player_name(response.username.into());
             }
-            Err(_error) => {
+            Err(AuthError::InvalidOtp) => {
                 let attempts = ui.get_otp_attempts() + 1;
                 ui.set_otp_attempts(attempts);
                 ui.set_otp_error(if attempts >= 5 {
@@ -51,6 +60,9 @@ pub(crate) fn bind(ui: &ClientView) {
                     "Incorrect verification code. Try again.".into()
                 });
             }
+            Err(_) => ui.set_otp_error(
+                "Unable to verify right now. Check the server and try again.".into(),
+            ),
         }
     });
     let weak = ui.as_weak();

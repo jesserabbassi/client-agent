@@ -1,8 +1,8 @@
 //! Exercise the real callback, worker, and event-loop handoff without a desktop.
 use crate::ui::ClientView;
 use slint::platform::{
-    EventLoopProxy, Platform, WindowAdapter,
     software_renderer::{MinimalSoftwareWindow, RepaintBufferType},
+    EventLoopProxy, Platform, WindowAdapter,
 };
 use std::{rc::Rc, sync::mpsc, time::Duration};
 
@@ -81,7 +81,7 @@ fn login_callback_validates_and_delivers_worker_results() {
     assert_eq!(ui.global::<Activity>().get_balance(), "0.00 €");
     assert_eq!(ui.global::<Activity>().get_reservations().row_count(), 0);
 
-    for (width, height) in [(1920, 1080), (2560, 1440)] {
+    for (width, height) in [(700, 600), (900, 700), (1920, 1080), (2560, 1440)] {
         window.set_size(slint::PhysicalSize::new(width, height));
         window.request_redraw();
         let mut pixels = slint::SharedPixelBuffer::<slint::Rgb8Pixel>::new(width, height);
@@ -97,6 +97,55 @@ fn login_callback_validates_and_delivers_worker_results() {
             file.write_all(pixels.as_bytes()).expect("capture pixels");
         }
     }
+    ui.set_registering(true);
+    window.set_size(slint::PhysicalSize::new(700, 600));
+    window.request_redraw();
+    let mut narrow_pixels = slint::SharedPixelBuffer::<slint::Rgb8Pixel>::new(700, 600);
+    assert!(window.draw_if_needed(|renderer| {
+        renderer.render(narrow_pixels.make_mut_slice(), 700);
+    }));
+    if let Some(directory) = std::env::var_os("NINETY_TEST_CAPTURE_DIR") {
+        use std::io::Write;
+        let path = std::path::PathBuf::from(directory).join("register-narrow.ppm");
+        let mut file = std::fs::File::create(path).expect("register capture");
+        write!(file, "P6\n700 600\n255\n").expect("register header");
+        file.write_all(narrow_pixels.as_bytes())
+            .expect("register pixels");
+    }
+    ui.set_registering(false);
+    ui.set_authenticated(true);
+    for page in [
+        crate::ui::Page::Dashboard,
+        crate::ui::Page::Games,
+        crate::ui::Page::Wallet,
+    ] {
+        ui.set_page(page);
+        window.request_redraw();
+        assert!(window.draw_if_needed(|renderer| {
+            renderer.render(narrow_pixels.make_mut_slice(), 700);
+        }));
+        if let Some(directory) = std::env::var_os("NINETY_TEST_CAPTURE_DIR") {
+            use std::io::Write;
+            let path = std::path::PathBuf::from(directory).join(format!("{page:?}-narrow.ppm"));
+            let mut file = std::fs::File::create(path).expect("page capture");
+            write!(file, "P6\n700 600\n255\n").expect("page header");
+            file.write_all(narrow_pixels.as_bytes())
+                .expect("page pixels");
+        }
+        window.set_size(slint::PhysicalSize::new(1120, 830));
+        window.request_redraw();
+        let mut wide_pixels = slint::SharedPixelBuffer::<slint::Rgb8Pixel>::new(1120, 830);
+        assert!(window.draw_if_needed(|renderer| {
+            renderer.render(wide_pixels.make_mut_slice(), 1120);
+        }));
+        window.set_size(slint::PhysicalSize::new(700, 600));
+    }
+    ui.set_authenticated(false);
+    ui.set_page(crate::ui::Page::Dashboard);
+    window.set_size(slint::PhysicalSize::new(700, 600));
+    crate::ui::enter_compact(&ui);
+    crate::ui::leave_compact(&ui);
+    assert_eq!(window.size(), slint::PhysicalSize::new(700, 600));
     ui.invoke_login_requested(" ".into(), "password".into(), false);
     assert!(!ui.get_busy());
     assert_eq!(ui.get_message(), "Enter your username or email.");

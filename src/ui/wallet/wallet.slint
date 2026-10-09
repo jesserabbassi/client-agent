@@ -3,13 +3,13 @@ import { Activity } from "../shared/activity.slint";
 import { Theme, Panel, Eyebrow, ActionButton } from "../shared/design.slint";
 export component Wallet inherits Rectangle {
     background: Theme.background;
-    min-height: 690px;
-    VerticalLayout { width: min(root.width, 1320px); x: (root.width - self.width) / 2; alignment: start; padding: 32px; spacing: 18px;
+    min-height: (root.width < 900px ? 1050px : 850px) + Activity.transactions.length * 64px;
+    VerticalLayout { width: min(root.width, 1320px); x: (root.width - self.width) / 2; alignment: start; padding: root.width < 800px ? 20px : 32px; spacing: root.width < 800px ? 12px : 18px;
         Eyebrow { text: "LESS FRICTION. MORE PLAYTIME."; color: Theme.accent; }
         Text { text: "Your wallet."; color: Theme.text; font-size: 32px; font-weight: 700; height: 42px; }
         Text { text: "Keep your next session within reach."; color: Theme.muted; font-size: 14px; height: 24px; }
-        HorizontalLayout { height: 250px; spacing: 18px;
-            Panel { background: #1c3235; border-color: #3b5553;
+        GridLayout { height: root.width < 900px ? 512px : 250px; spacing: root.width < 900px ? 12px : 18px;
+            Panel { row: 0; col: 0; background: #1c3235; border-color: #3b5553;
                 VerticalLayout { padding: 26px; spacing: 12px;
                     Eyebrow { text: "AVAILABLE BALANCE"; color: Theme.cyan; }
                     Text { text: Activity.balance; color: Theme.text; font-size: 44px; font-weight: 700; height: 65px; }
@@ -18,7 +18,7 @@ export component Wallet inherits Rectangle {
                     Text { text: "NINETY  /  PLAYER WALLET"; color: Theme.cyan; font-size: 9px; height: 20px; }
                 }
             }
-            Panel {
+            Panel { row: root.width < 900px ? 1 : 0; col: root.width < 900px ? 0 : 1;
                 VerticalLayout { padding: 24px; spacing: 12px;
                     Text { text: "Top up & get going"; color: Theme.text; font-size: 20px; font-weight: 600; }
                     Text { text: "Enter an amount between 1.00 and 500.00 €."; color: Theme.muted; font-size: 12px; wrap: word-wrap; }

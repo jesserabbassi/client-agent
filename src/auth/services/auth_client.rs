@@ -7,7 +7,7 @@ use std::time::Duration;
 pub(crate) trait AuthClient: Send + Sync {
     fn authenticate(&self, request: &LoginRequest) -> Result<LoginResponse, AuthError>;
     fn verify_otp(&self, request: &OtpRequest) -> Result<LoginResponse, AuthError>;
-    fn register(&self, request: &RegisterRequest) -> Result<Value, AuthError>;
+    fn register(&self, request: &RegisterRequest) -> Result<LoginResponse, AuthError>;
     fn refresh(&self, refresh_token: &str) -> Result<Value, AuthError>;
     fn logout(&self, access_token: &str) -> Result<(), AuthError>;
     fn profile(&self, access_token: &str) -> Result<Value, AuthError>;
@@ -83,6 +83,7 @@ impl ServerAuthClient {
                 .map(Into::into)
                 .map_err(|_| AuthError::NetworkError),
             400 => Err(AuthError::InvalidOtp),
+            503 => Err(AuthError::EmailDelivery),
             _ => Err(AuthError::ServerUnavailable),
         }
     }
@@ -118,9 +119,13 @@ impl ServerAuthClient {
 }
 #[derive(Serialize)]
 pub(crate) struct RegisterRequest {
-    #[serde(rename = "Email")]
+    #[serde(rename = "firstName")]
+    pub(crate) first_name: String,
+    #[serde(rename = "lastName")]
+    pub(crate) last_name: String,
+    #[serde(rename = "email")]
     pub(crate) email: String,
-    #[serde(rename = "Password")]
+    #[serde(rename = "password")]
     pub(crate) password: String,
 }
 #[derive(Serialize)]
@@ -149,6 +154,8 @@ struct BackendAuthResponse {
     requires_otp: bool,
     #[serde(rename = "accessToken", alias = "token")]
     access_token: Option<String>,
+    #[serde(rename = "otpPurpose")]
+    otp_purpose: Option<u8>,
 }
 impl From<BackendAuthResponse> for LoginResponse {
     fn from(v: BackendAuthResponse) -> Self {
@@ -157,6 +164,7 @@ impl From<BackendAuthResponse> for LoginResponse {
             username: v.email,
             requires_otp: v.requires_otp,
             access_token: v.access_token,
+            otp_purpose: v.otp_purpose,
         }
     }
 }
@@ -185,13 +193,13 @@ impl AuthClient for ServerAuthClient {
             .json(&OtpBody {
                 user_id: &request.user_id,
                 code: &request.code,
-                purpose: 1,
+                purpose: request.purpose,
             })
             .send()
             .map_err(|_| AuthError::NetworkError)?;
         Self::parse(r)
     }
-    fn register(&self, request: &RegisterRequest) -> Result<Value, AuthError> {
+    fn register(&self, request: &RegisterRequest) -> Result<LoginResponse, AuthError> {
         let response = self.request(
             reqwest::Method::POST,
             &self.paths.register,
@@ -199,8 +207,12 @@ impl AuthClient for ServerAuthClient {
             Some(serde_json::to_value(request).unwrap_or_default()),
         )?;
         match response.status().as_u16() {
-            200..=299 => Ok(response.json().unwrap_or(Value::Null)),
+            200..=299 => response
+                .json::<BackendAuthResponse>()
+                .map(Into::into)
+                .map_err(|_| AuthError::NetworkError),
             400 | 409 => Err(AuthError::InvalidCredentials),
+            503 => Err(AuthError::EmailDelivery),
             _ => Err(AuthError::ServerUnavailable),
         }
     }
@@ -241,5 +253,30 @@ impl AuthClient for ServerAuthClient {
             Some(access_token),
             Some(serde_json::json!({"currentPassword": current, "newPassword": new})),
         )?)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::RegisterRequest;
+
+    #[test]
+    fn register_payload_matches_backend_dto() {
+        let payload = serde_json::to_value(RegisterRequest {
+            first_name: "Ada".into(),
+            last_name: "Lovelace".into(),
+            email: "ada@example.com".into(),
+            password: "example-password".into(),
+        })
+        .expect("serialize registration");
+        assert_eq!(
+            payload,
+            serde_json::json!({
+                "firstName": "Ada",
+                "lastName": "Lovelace",
+                "email": "ada@example.com",
+                "password": "example-password"
+            })
+        );
     }
 }

@@ -6,13 +6,13 @@ export component Dashboard inherits Rectangle {
     callback games();
     callback wallet();
     background: Theme.background;
-    min-height: 730px;
-    VerticalLayout { width: min(root.width, 1320px); x: (root.width - self.width) / 2; alignment: start; padding: 32px; spacing: 18px;
+    min-height: (root.width < 900px ? 1220px : 950px) + Activity.reservations.length * 70px;
+    VerticalLayout { width: min(root.width, 1320px); x: (root.width - self.width) / 2; alignment: start; padding: root.width < 800px ? 20px : 32px; spacing: root.width < 800px ? 12px : 18px;
         Eyebrow { text: "GOOD TO HAVE YOU HERE"; color: Theme.accent; }
         Text { text: "Welcome back, " + root.player-name + "."; color: Theme.text; font-size: 32px; font-weight: 700; height: 42px; }
         Text { text: "A little less waiting. A lot more playing."; color: Theme.muted; font-size: 14px; height: 24px; }
-        HorizontalLayout { spacing: 18px; height: 300px;
-            Panel { horizontal-stretch: 3; background: #1c2633; border-color: #42404a;
+        GridLayout { spacing: root.width < 900px ? 12px : 18px; height: root.width < 900px ? 590px : 300px;
+            Panel { row: 0; col: 0; horizontal-stretch: 3; background: #1c2633; border-color: #42404a;
                 Rectangle { x: 24px; y: 0px; width: 52px; height: 3px; background: Theme.accent; }
                 VerticalLayout { padding: 24px; spacing: 12px;
                     HorizontalLayout { height: 20px;
@@ -30,7 +30,7 @@ export component Dashboard inherits Rectangle {
                     if Activity.session-active: ActionButton { text: "End session"; clicked => { Activity.end(); } }
                 }
             }
-            Panel { horizontal-stretch: 2;
+            Panel { row: root.width < 900px ? 1 : 0; col: root.width < 900px ? 0 : 1; horizontal-stretch: 2;
                 VerticalLayout { padding: 24px; spacing: 12px;
                     Eyebrow { text: "YOUR PLAYTIME, FUNDED"; }
                     Text { text: Activity.balance; color: Theme.text; font-size: 38px; font-weight: 700; height: 54px; }

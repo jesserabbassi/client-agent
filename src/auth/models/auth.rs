@@ -9,8 +9,13 @@ pub(crate) struct LoginResponse {
     pub(crate) username: String,
     pub(crate) requires_otp: bool,
     pub(crate) access_token: Option<String>,
+    pub(crate) otp_purpose: Option<u8>,
 }
-pub(crate) struct OtpRequest { pub(crate) user_id: String, pub(crate) code: String }
+pub(crate) struct OtpRequest {
+    pub(crate) user_id: String,
+    pub(crate) code: String,
+    pub(crate) purpose: u8,
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum AuthState {
     Idle,
@@ -27,4 +32,5 @@ pub(crate) enum AuthError {
     ServerUnavailable,
     NetworkError,
     InvalidOtp,
+    EmailDelivery,
 }

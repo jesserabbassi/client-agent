@@ -10,15 +10,16 @@ component NavItem inherits Rectangle {
     in property <string> label;
     in property <string> number;
     in property <bool> selected;
+    in property <bool> compact;
     callback clicked();
     height: 52px; border-radius: 8px;
     background: root.selected ? #25303d : transparent;
     border-width: root.selected || button.has-focus ? 1px : 0px;
     border-color: button.has-focus ? Theme.cyan : #3c4b5b;
     if root.selected: Rectangle { x: 0px; y: 16px; width: 3px; height: 20px; background: Theme.accent; border-radius: 2px; }
-    HorizontalLayout { padding-left: 17px; padding-right: 16px; spacing: 14px;
+    HorizontalLayout { padding-left: root.compact ? 13px : 17px; padding-right: root.compact ? 8px : 16px; spacing: root.compact ? 2px : 14px;
         Text { text: root.number; color: root.selected ? Theme.accent : Theme.subtle; font-size: 11px; width: 22px; vertical-alignment: center; }
-        Text { text: root.label; color: root.selected ? Theme.text : Theme.muted; font-weight: root.selected ? 600 : 400; font-size: 14px; vertical-alignment: center; }
+        if !root.compact: Text { text: root.label; color: root.selected ? Theme.text : Theme.muted; font-weight: root.selected ? 600 : 400; font-size: 14px; vertical-alignment: center; }
         if root.selected: Text { text: "›"; color: Theme.accent; width: 10px; vertical-alignment: center; }
     }
     button := Button { width: parent.width; height: parent.height; text: root.label; opacity: 0; clicked => { root.clicked(); } }
@@ -31,27 +32,29 @@ export component AppShell inherits Rectangle {
     callback navigate(Page);
     callback logout();
     background: Theme.background;
+    private property <bool> narrow: root.width < 800px;
     HorizontalLayout { spacing: 0px;
-        Rectangle { width: 220px; background: #0f1723; border-width: 1px; border-color: #202c3c;
-            VerticalLayout { padding-left: 18px; padding-right: 18px; padding-top: 30px; padding-bottom: 22px; spacing: 10px;
+        Rectangle { width: root.narrow ? 62px : root.width < 1100px ? 180px : 220px; background: #0f1723; border-width: 1px; border-color: #202c3c;
+            ScrollView { width: parent.width; height: parent.height; viewport-width: self.width; viewport-height: root.narrow ? self.height : max(self.height, 700px); vertical-scrollbar-policy: ScrollBarPolicy.as-needed; mouse-drag-pan-enabled: true;
+            VerticalLayout { width: parent.width; height: root.narrow ? parent.height : max(parent.height, 700px); padding-left: root.narrow ? 5px : 18px; padding-right: root.narrow ? 5px : 18px; padding-top: 30px; padding-bottom: 22px; spacing: 10px;
                 HorizontalLayout { height: 48px; spacing: 12px;
                     Rectangle { width: 38px; height: 38px; background: Theme.accent; border-radius: 10px;
                         Text { text: "N"; color: #20160f; font-size: 25px; font-weight: 900; horizontal-alignment: center; vertical-alignment: center; }
                     }
-                    VerticalLayout { spacing: 1px;
+                    if !root.narrow: VerticalLayout { spacing: 1px;
                         Text { text: "NINETY"; color: Theme.text; font-size: 21px; font-weight: 800; }
                         Text { text: "G A M I N G   H O U S E"; color: Theme.subtle; font-size: 8px; }
                     }
                 }
                 Rectangle { height: 28px; background: transparent; }
-                Eyebrow { text: "YOUR SPACE"; }
+                if !root.narrow: Eyebrow { text: "YOUR SPACE"; }
                 for item in [
                     { label: "Overview", number: "01", page: Page.dashboard },
                     { label: "Games library", number: "02", page: Page.games },
                     { label: "Wallet", number: "03", page: Page.wallet }
-                ]: NavItem { label: item.label; number: item.number; selected: root.page == item.page; clicked => { root.navigate(item.page); } }
+                ]: NavItem { label: item.label; number: item.number; selected: root.page == item.page; compact: root.narrow; clicked => { root.navigate(item.page); } }
                 Rectangle { vertical-stretch: 1; background: transparent; }
-                Rectangle { height: 140px; border-radius: 10px; background: #1a2c2b; border-width: 1px; border-color: #30483e;
+                if !root.narrow: Rectangle { height: 140px; border-radius: 10px; background: #1a2c2b; border-width: 1px; border-color: #30483e;
                     VerticalLayout { padding: 17px; spacing: 8px;
                         Eyebrow { text: "MAKE YOURSELF AT HOME"; color: Theme.cyan; font-size: 9px; }
                         Text { text: "More than\na game."; color: Theme.text; font-size: 23px; font-weight: 700; }
@@ -59,24 +62,25 @@ export component AppShell inherits Rectangle {
                     }
                 }
                 Rectangle { height: 16px; background: transparent; }
-                Eyebrow { text: "NINETY  /  CLIENT 0.1.0"; font-size: 9px; }
+                if !root.narrow: Eyebrow { text: "NINETY  /  CLIENT 0.1.0"; font-size: 9px; }
+            }
             }
         }
         VerticalLayout { spacing: 0px;
             Rectangle { height: 80px; background: Theme.background;
-                HorizontalLayout { padding-left: 32px; padding-right: 32px; padding-top: 18px; padding-bottom: 18px; spacing: 16px;
+                HorizontalLayout { padding-left: root.narrow ? 16px : 32px; padding-right: root.narrow ? 16px : 32px; padding-top: 18px; padding-bottom: 18px; spacing: root.narrow ? 8px : 16px;
                     Text { text: "WORKSPACE   /   " + (root.page == Page.dashboard ? "OVERVIEW" : root.page == Page.games ? "GAMES LIBRARY" : "WALLET"); color: Theme.subtle; font-size: 10px; vertical-alignment: center; }
                     Rectangle { horizontal-stretch: 1; background: transparent; }
-                    Rectangle { width: 110px; height: 29px; border-radius: 15px; background: #23302d;
+                    if !root.narrow: Rectangle { width: 110px; height: 29px; border-radius: 15px; background: #23302d;
                         Text { text: "DEMO SPACE"; color: Theme.cyan; font-size: 9px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
                     }
                     Rectangle { width: 1px; background: Theme.border; }
-                    Text { text: root.player-name; color: Theme.text; font-size: 13px; horizontal-stretch: 0; vertical-alignment: center; }
+                    if !root.narrow: Text { text: root.player-name; color: Theme.text; font-size: 13px; horizontal-stretch: 0; vertical-alignment: center; }
                     ActionButton { text: "Log out"; width: 100px; clicked => { root.logout(); } }
                 }
                 Rectangle { y: parent.height - 1px; height: 1px; width: parent.width; background: #202b3b; }
             }
-            ScrollView { viewport-width: self.width;
+            ScrollView { viewport-width: max(self.width, 560px); vertical-scrollbar-policy: ScrollBarPolicy.as-needed; horizontal-scrollbar-policy: ScrollBarPolicy.as-needed; mouse-drag-pan-enabled: true;
                 if root.page == Page.dashboard: Dashboard { player-name: root.player-name; games => { root.navigate(Page.games); } wallet => { root.navigate(Page.wallet); } }
                 if root.page == Page.games: Games {}
                 if root.page == Page.wallet: Wallet {}

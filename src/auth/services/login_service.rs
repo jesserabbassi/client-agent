@@ -24,8 +24,8 @@ impl<C: AuthClient> LoginService<C> {
     pub(crate) fn verify_otp(&self, request: OtpRequest) -> Result<LoginResponse, AuthError> {
         self.client.verify_otp(&request)
     }
-    pub(crate) fn register(&self, request: &RegisterRequest) -> Result<(), AuthError> {
-        self.client.register(request).map(|_| ())
+    pub(crate) fn register(&self, request: &RegisterRequest) -> Result<LoginResponse, AuthError> {
+        self.client.register(request)
     }
 }
 #[cfg(test)]
@@ -41,6 +41,7 @@ mod tests {
                     username: request.username.clone(),
                     requires_otp: false,
                     access_token: None,
+                    otp_purpose: None,
                 })
             } else {
                 Err(AuthError::InvalidCredentials)
@@ -52,8 +53,14 @@ mod tests {
         fn register(
             &self,
             _request: &super::super::auth_client::RegisterRequest,
-        ) -> Result<Value, AuthError> {
-            Ok(Value::Null)
+        ) -> Result<LoginResponse, AuthError> {
+            Ok(LoginResponse {
+                user_id: "test-user".into(),
+                username: "player@example.com".into(),
+                requires_otp: true,
+                access_token: None,
+                otp_purpose: Some(0),
+            })
         }
         fn refresh(&self, _refresh_token: &str) -> Result<Value, AuthError> {
             Ok(Value::Null)
