@@ -1,0 +1,56 @@
+import { Button, LineEdit } from "std-widgets.slint";
+
+export enum RegistrationState { initial, registering, pending, approved, error }
+
+export component RegistrationScreen inherits Rectangle {
+    in property <RegistrationState> state: RegistrationState.initial;
+    in-out property <string> station-id;
+    in property <string> machine-name;
+    in property <string> agent-version;
+    in property <string> message;
+    callback register(string);
+    callback retry();
+    background: #070b13;
+
+    HorizontalLayout { spacing: 0px;
+      Rectangle { width: 42%; height: parent.height; background: #0b111d;
+        Rectangle { x: 0px; y: 0px; width: parent.width; height: 4px; background: #ff5500; }
+        VerticalLayout { padding-left: 56px; padding-right: 56px; padding-top: 56px; padding-bottom: 56px; spacing: 18px;
+            Text { text: "NINETY GAMING HOUSE"; color: #ff6a22; font-size: 16px; font-weight: 700; letter-spacing: 3px; }
+            Rectangle { vertical-stretch: 1; background: transparent; }
+            Text { text: "MORE THAN A GAME"; color: #f0f4fc; font-size: 42px; font-weight: 700; }
+            Text { text: "CLIENT AGENT / SECURE STATION NETWORK"; color: #00d2ff; font-size: 11px; letter-spacing: 2px; }
+            Rectangle { height: 120px; background: #101a2b; border-width: 1px; border-color: #1b3652; }
+            Text { text: "LOCAL NODE READY"; color: #8a98b2; font-size: 11px; letter-spacing: 2px; }
+        }
+      }
+      Rectangle { horizontal-stretch: 1; height: parent.height; background: #090e18;
+        VerticalLayout { padding-left: 84px; padding-right: 84px; padding-top: 52px; padding-bottom: 52px; spacing: 20px;
+            Text { text: "CLIENT AGENT SETUP"; color: #8a98b2; font-size: 11px; letter-spacing: 3px; }
+            Text { text: state == RegistrationState.pending ? "WAITING FOR SUPERVISOR APPROVAL" : state == RegistrationState.approved ? "STATION APPROVED" : "REGISTER THIS STATION"; color: #f0f4fc; font-size: 34px; font-weight: 700; wrap: word-wrap; }
+            Text { text: state == RegistrationState.pending ? "Keep this application open. This PC will be connected once the supervisor approves the registration." : state == RegistrationState.approved ? "Your Agent has been authorized. Completing secure setup..." : "Connect this PC to your Ninety Gaming House network."; color: #8a98b2; font-size: 15px; wrap: word-wrap; }
+            Text { text: "01 CONNECT  →  02 APPROVAL  →  03 READY"; color: state == RegistrationState.pending ? #ff6a22 : #00d2ff; font-size: 11px; letter-spacing: 2px; }
+            Rectangle { height: 1px; background: #1b2b40; }
+            Text { text: "STATION ID"; color: #00d2ff; font-size: 11px; letter-spacing: 2px; }
+            LineEdit { text <=> root.station-id; placeholder-text: "Enter the Station ID provided by your supervisor"; enabled: root.state == RegistrationState.initial || root.state == RegistrationState.error; height: 52px; }
+            HorizontalLayout { spacing: 16px; height: 56px;
+                Rectangle { horizontal-stretch: 1; background: #101a2a; border-width: 1px; border-color: #1c3852;
+                    Text { text: "MACHINE NAME\n" + root.machine-name; color: #f0f4fc; font-size: 12px; }
+                }
+                Rectangle { horizontal-stretch: 1; background: #101a2a; border-width: 1px; border-color: #1c3852;
+                    Text { text: "AGENT VERSION\n" + root.agent-version; color: #f0f4fc; font-size: 12px; }
+                }
+            }
+            Text { text: root.message; color: #ff6a22; font-size: 13px; wrap: word-wrap; visible: root.message != ""; }
+            Rectangle { height: 56px; background: root.state == RegistrationState.registering || root.state == RegistrationState.pending || root.state == RegistrationState.approved ? #27303c : #ff5500; border-radius: 4px;
+                Text { text: root.state == RegistrationState.registering ? "REGISTERING..." : root.state == RegistrationState.pending ? "PENDING APPROVAL" : root.state == RegistrationState.approved ? "SECURE SETUP..." : "REGISTER AGENT"; color: #ffffff; font-size: 14px; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
+                Button { width: parent.width; height: parent.height; enabled: root.state == RegistrationState.initial || root.state == RegistrationState.error; text: ""; clicked => { if (root.state == RegistrationState.error) { root.retry(); } else { root.register(root.station-id); } } }
+            }
+            Rectangle { height: 70px; background: #0d1725; border-width: 1px; border-color: #1b3652;
+                Text { text: "◈  SECURE REGISTRATION\nYour Agent must be approved by the supervisor before it becomes operational."; color: #8a98b2; font-size: 12px; wrap: word-wrap; }
+            }
+            Rectangle { vertical-stretch: 1; background: transparent; }
+        }
+      }
+    }
+}

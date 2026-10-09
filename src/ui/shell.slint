@@ -76,7 +76,7 @@ export component AppShell inherits Rectangle {
                 }
                 Rectangle { y: parent.height - 1px; height: 1px; width: parent.width; background: #202b3b; }
             }
-            ScrollView { viewport-width: self.width;
+            ScrollView { content-width: self.width;
                 if root.page == Page.dashboard: Dashboard { player-name: root.player-name; games => { root.navigate(Page.games); } wallet => { root.navigate(Page.wallet); } }
                 if root.page == Page.games: Games {}
                 if root.page == Page.wallet: Wallet {}

@@ -1,5 +1,6 @@
 use std::{path::PathBuf, time::Duration};
 use url::Url;
+use crate::agent::{registration, session};
 
 pub(crate) struct Config {
     pub hub: Url,
@@ -43,6 +44,7 @@ impl Config {
             std::env::var(name)
                 .ok()
                 .or_else(|| values.get(name).cloned())
+                .or_else(|| (name == "NINETY_TELEMETRY_HUB_URL").then(|| registration::base_url().ok().map(|url| format!("{url}/hubs/agents"))).flatten())
         })
     }
 
@@ -68,10 +70,11 @@ impl Config {
                 "hub URL must be HTTPS (HTTP allowed on loopback), with no credentials, query or fragment",
             );
         }
-        let station_id = get("NINETY_STATION_ID")
-            .ok_or("NINETY_STATION_ID is required")?
-            .parse()
-            .map_err(|_| "NINETY_STATION_ID must be a valid UUID")?;
+        let station_id = match get("NINETY_STATION_ID") {
+            Some(value) => value.parse().map_err(|_| "NINETY_STATION_ID must be a valid UUID")?,
+            None => session::restore().map_err(|_| "secure Agent identity is unavailable")?
+                .ok_or("NINETY_STATION_ID is required")?.station_id,
+        };
         let number = |key, default, min, max| -> Result<u64, &'static str> {
             let n = get(key)
                 .map(|s| s.parse::<u64>())
@@ -102,7 +105,7 @@ impl Config {
     /// The caller runs this file access on a blocking worker.
     pub fn token(&self) -> Result<Option<String>, &'static str> {
         use std::io::Read;
-        let token = if let Some(path) = &self.token_file {
+        let mut token = if let Some(path) = &self.token_file {
             let mut value = String::new();
             std::fs::File::open(path)
                 .map_err(|_| "cannot open telemetry token file")?
@@ -113,6 +116,10 @@ impl Config {
         } else {
             self.token.clone()
         };
+        if token.is_none() {
+            session::refresh_access_token().map_err(|_| "cannot refresh Agent credentials")?;
+            token = session::access_token();
+        }
         if let Some(value) = &token {
             if value.is_empty()
                 || value.len() > 16384

@@ -1,5 +1,6 @@
 use crate::{
     communication::signalr::server_client::{ACK_TIMEOUT, Result, SERVER_TIMEOUT, ServerClient},
+    infrastructure::local_database::LocalDatabase,
     infrastructure::telemetry_config::Config,
     monitoring::{
         hardware::network_monitor::NetworkMonitor,
@@ -20,6 +21,7 @@ const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(15);
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct BackendTelemetry {
+    event_id: String,
     station_id: String,
     cpu_usage: f64,
     gpu_usage: f64,
@@ -34,6 +36,7 @@ struct BackendTelemetry {
 struct TelemetrySender {
     server_client: ServerClient,
     queued: Option<Arc<Telemetry>>,
+    database: Arc<LocalDatabase>,
 }
 
 impl TelemetrySender {
@@ -59,6 +62,13 @@ pub(crate) async fn run(
     mut stop: watch::Receiver<bool>,
     network_monitor: NetworkMonitor,
 ) {
+    let database = match LocalDatabase::open() {
+        Ok(database) => Arc::new(database),
+        Err(error) => {
+            tracing::error!(reason = error, "encrypted local telemetry storage unavailable");
+            return;
+        }
+    };
     let mut failures = 0u32;
     loop {
         if *stop.borrow() {
@@ -82,6 +92,7 @@ pub(crate) async fn run(
                 let mut sender = TelemetrySender {
                     server_client: connection,
                     queued: None,
+                    database: database.clone(),
                 };
                 tracing::info!("Telemetry SignalR connection established");
                 session_loop(&mut sender, &config, &samples, &mut stop, &network_monitor).await
@@ -95,6 +106,14 @@ pub(crate) async fn run(
             }
             Err(error) => {
                 network_monitor.mark_offline();
+                if let Some(snapshot) = samples.borrow().clone() {
+                    let dto = map_telemetry(config.station_id, &snapshot);
+                    if let Ok(payload) = serde_json::to_string(&dto) {
+                        if let Err(queue_error) = database.enqueue(&dto.event_id, &payload) {
+                            tracing::error!(reason = queue_error, "could not persist offline telemetry");
+                        }
+                    }
+                }
                 let delay = backoff(failures, rand::random::<f64>());
                 failures = failures.saturating_add(1);
                 tracing::warn!(
@@ -133,6 +152,7 @@ async fn session_loop(
         )
         .await?;
     await_completion(sender, "connect").await?;
+    drain_queue(sender).await?;
 
     let mut send_tick = tokio::time::interval(config.interval);
     send_tick.set_missed_tick_behavior(MissedTickBehavior::Skip);
@@ -140,12 +160,12 @@ async fn session_loop(
     heartbeat_tick.set_missed_tick_behavior(MissedTickBehavior::Skip);
     let mut ping_tick = tokio::time::interval(Duration::from_secs(10));
     ping_tick.set_missed_tick_behavior(MissedTickBehavior::Skip);
-    let mut pending: Option<(String, Instant)> = None;
+    let mut pending: Option<(String, Instant, Option<String>)> = None;
     loop {
         let server_deadline = sender.server_client.last_received + SERVER_TIMEOUT;
         let ack_deadline = pending
             .as_ref()
-            .map(|(_, sent)| *sent + ACK_TIMEOUT)
+            .map(|(_, sent, _)| *sent + ACK_TIMEOUT)
             .unwrap_or_else(|| Instant::now() + SERVER_TIMEOUT);
         tokio::select! {
             biased;
@@ -155,12 +175,17 @@ async fn session_loop(
             message = sender.server_client.receive() => {
                 let message = message?;
                 match message["type"].as_u64() {
-                    Some(3) if pending.as_ref().is_some_and(|(id, _)| message["invocationId"].as_str() == Some(id)) => {
+                    Some(3) if pending.as_ref().is_some_and(|(id, _, _)| message["invocationId"].as_str() == Some(id)) => {
                         if let Some(error) = message["error"].as_str() {
                             tracing::warn!(reason = error, "Backend rejected SignalR invocation");
                             return Err("backend rejected SignalR invocation");
                         }
-                        if let Some((_, sent)) = pending.take() { network_monitor.record_latency(sent.elapsed()); }
+                        if let Some((_, sent, event_id)) = pending.take() {
+                            if let Some(event_id) = event_id {
+                                sender.database.remove(&event_id)?;
+                            }
+                            network_monitor.record_latency(sent.elapsed());
+                        }
                     }
                     Some(6) => {}
                     Some(7) => {
@@ -175,7 +200,7 @@ async fn session_loop(
             _ = ping_tick.tick() => sender.server_client.send_json(json!({"type": 6})).await?,
             _ = heartbeat_tick.tick(), if pending.is_none() => {
                 sender.invoke("heartbeat", "Heartbeat", json!([])).await?;
-                pending = Some(("heartbeat".into(), Instant::now()));
+                pending = Some(("heartbeat".into(), Instant::now(), None));
             }
             _ = send_tick.tick(), if pending.is_none() => {
                 if samples.has_changed().is_err() { return Err("telemetry collector is unavailable"); }
@@ -185,8 +210,11 @@ async fn session_loop(
                 sender.queue(snapshot);
                 let Some(telemetry) = sender.queued.as_deref() else { continue; };
                 let dto = map_telemetry(config.station_id, telemetry);
+                let event_id = dto.event_id.clone();
+                let payload = serde_json::to_string(&dto).map_err(|_| "telemetry serialization failed")?;
+                sender.database.enqueue(&event_id, &payload)?;
                 sender.invoke("telemetry", "SendTelemetry", json!([dto])).await?;
-                pending = Some(("telemetry".into(), Instant::now()));
+                pending = Some(("telemetry".into(), Instant::now(), Some(event_id)));
             }
         }
     }
@@ -209,11 +237,23 @@ async fn await_completion(sender: &mut TelemetrySender, invocation_id: &str) -> 
     }
 }
 
+async fn drain_queue(sender: &mut TelemetrySender) -> Result<()> {
+    for (event_id, payload) in sender.database.pending()? {
+        let value: Value = serde_json::from_str(&payload).map_err(|_| "queued telemetry is invalid")?;
+        let invocation_id = format!("queued-{event_id}");
+        sender.invoke(&invocation_id, "SendTelemetry", json!([value])).await?;
+        await_completion(sender, &invocation_id).await?;
+        sender.database.remove(&event_id)?;
+    }
+    Ok(())
+}
+
 fn map_telemetry(station_id: uuid::Uuid, telemetry: &Telemetry) -> BackendTelemetry {
     let timestamp = DateTime::<Utc>::from_timestamp_millis(telemetry.timestamp as i64)
         .unwrap_or_else(Utc::now)
         .to_rfc3339_opts(SecondsFormat::Millis, true);
     BackendTelemetry {
+        event_id: uuid::Uuid::new_v5(&uuid::Uuid::NAMESPACE_OID, format!("{}:{}", station_id, telemetry.timestamp).as_bytes()).to_string(),
         station_id: station_id.to_string(),
         cpu_usage: telemetry.cpu_usage as f64,
         gpu_usage: telemetry.gpu_usage.unwrap_or_default() as f64,

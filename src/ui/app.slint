@@ -1,10 +1,12 @@
 export { Activity, Reservation, Transaction } from "shared/activity.slint";
 import { OtpScreen } from "otp/otp.slint";
 import { LoginScreen } from "login/screen.slint";
+import { RegistrationScreen, RegistrationState } from "registration/registration.slint";
 import { AppShell, Page } from "shell.slint";
 import { CompactSession } from "compact/compact.slint";
 import { Palette } from "std-widgets.slint";
 export { Page }
+export { RegistrationState }
 export component ClientView inherits Window {
     title: root.compact-mode ? "Ninety Agent" : "Ninety Gaming House — Gaming Client";
     preferred-width: 1280px;
@@ -19,6 +21,11 @@ export component ClientView inherits Window {
     init => { Palette.color-scheme = ColorScheme.dark; }
     in property <bool> busy: false;
     in property <bool> authenticated: false;
+    in-out property <bool> setup-complete: false;
+    in property <RegistrationState> registration-state: RegistrationState.initial;
+    in-out property <string> station-id;
+    in property <string> machine-name;
+    in property <string> agent-version;
     in-out property <bool> compact-mode: false;
     in-out property <float> compact-width: 150;
     in-out property <int> full-window-x: 0;
@@ -43,8 +50,18 @@ export component ClientView inherits Window {
     callback logout-requested();
     callback login-requested(string, string, bool);
     callback register-requested(string, string, string);
+    callback station-registration-requested(string);
     callback open-full-agent();
-    if !root.authenticated && !root.otp-pending: LoginScreen {
+    if !root.setup-complete: RegistrationScreen {
+        state: root.registration-state;
+        station-id <=> root.station-id;
+        machine-name: root.machine-name;
+        agent-version: root.agent-version;
+        message: root.message;
+        register(id) => { root.station-registration-requested(id); }
+        retry => { root.station-registration-requested(root.station-id); }
+    }
+    if root.setup-complete && !root.authenticated && !root.otp-pending: LoginScreen {
         busy: root.busy;
         authenticated: root.authenticated;
         development-mode: root.development-mode;
@@ -55,7 +72,7 @@ export component ClientView inherits Window {
         login-requested(u, p, r) => { root.login-requested(u, p, r); }
         register-requested(e, p, c) => { root.register-requested(e, p, c); }
     }
-    if !root.authenticated && root.otp-pending: OtpScreen {
+    if root.setup-complete && !root.authenticated && root.otp-pending: OtpScreen {
         code <=> root.otp-code;
         error: root.otp-error;
         locked: root.otp-attempts >= 5;

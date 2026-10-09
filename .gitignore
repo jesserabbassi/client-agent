@@ -17,4 +17,5 @@
 # Local configuration may contain machine credentials.
 .env
 .env.*
+/target-keyring*
 !.env.example
